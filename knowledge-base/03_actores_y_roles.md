@@ -109,3 +109,19 @@ Catálogo cerrado real de roles del sistema (select `base_rol`):
 Solo se infiere una: **login** (probablemente `login.php` o similar, no recorrida porque el usuario ya estaba logueado al inicio).
 
 → Ver [10_preguntas_abiertas.md](10_preguntas_abiertas.md#PA-04) para validar.
+
+---
+
+## ⚠️ Corrección para activia-trace — modelo de roles y permisos
+
+> Todo lo de arriba describe el modelo **observado en PulseUPs/olsoft (el sistema que reemplazamos)**. NO replicar. activia-trace corrige estos puntos:
+
+| Anti-patrón observado en olsoft | Corrección en activia-trace |
+|----------------------------------|------------------------------|
+| **Flag binario `is_admin`** ortogonal al rol (A3, D7) — permisos opacos | **RBAC con permisos finos por feature**. Roles ricos: `ALUMNO`, `TUTOR`, `PROFESOR`, `COORDINADOR`, `ADMIN`, `FINANZAS`. Sin flag binario. ([RF-04](../docs/PRD.md#auth-roles-y-tenants)) |
+| **ADMIN FINANCIERO inferido** (A4) sin rol explícito | Rol **`FINANZAS`** de primera clase, con permisos propios sobre Salarios/Liquidaciones |
+| **Super-admin vía `?leg=1`** (impersonation por URL) | **Identidad SOLO desde el JWT firmado**. La impersonation legítima es feature explícita, permisada y 100% auditada. Ver [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) |
+| **ALUMNO es objeto, no usuario** (A6) | `ALUMNO` es un **rol/usuario real** con portal propio (Fase 2) |
+| **Sin aislamiento entre instituciones** | Todo rol vive **dentro de un Tenant**. Un usuario nunca ve datos de otro tenant ([RNF-22](../docs/PRD.md#multi-tenancy)) |
+
+Detalle completo del modelo de seguridad en [`docs/ARQUITECTURA.md` §5](../docs/ARQUITECTURA.md).

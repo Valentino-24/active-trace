@@ -20,6 +20,8 @@ Decisiones de diseño visibles en la herramienta + supuestos inferidos durante e
 
 **Por qué importa**: el sistema asume que el legajo es único, estable y disponible al alta. Si una institución no usa legajos, esto es bloqueante.
 
+> ⚠️ **Decisión REVERTIDA en activia-trace**: la identidad de auth es un **UUID interno**, no el legajo. El legajo es atributo de negocio. Exponerlo como identidad en URLs habilitó [RN-41 / P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver).
+
 ---
 
 ### D3 — Scope por (profesor, materia) en datos operativos
@@ -64,6 +66,8 @@ Decisiones de diseño visibles en la herramienta + supuestos inferidos durante e
 **Evidencia**: checkbox `is_admin` separado del campo de rol en `admin_profesores.php`.
 
 **Por qué importa**: un profesor regular puede ser admin (super-usuario funcional), y un coordinador puede no serlo (solo coordina sin manipular el sistema).
+
+> ⚠️ **Decisión REVERTIDA en activia-trace**: el flag binario `is_admin` se reemplaza por **RBAC con permisos finos por feature** y roles ricos (`ALUMNO, TUTOR, PROFESOR, COORDINADOR, ADMIN, FINANZAS`). El flag binario producía permisos opacos ([P10](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver)). Ver [RF-04](../docs/PRD.md#auth-roles-y-tenants) y [`ARQUITECTURA.md` §5.2](../docs/ARQUITECTURA.md).
 
 ---
 
@@ -118,6 +122,8 @@ Decisiones de diseño visibles en la herramienta + supuestos inferidos durante e
 **Suposición:** el login pide legajo (o email) + password. No se observó la pantalla.
 
 **Cómo validar**: cerrar sesión y revisar `login.php` o equivalente.
+
+> ⚠️ **Definido para activia-trace** (no suposición): login por **email + password (Argon2id) + 2FA opcional (TOTP)**, sesión por **JWT** (access 15 min + refresh rotation). Ver [RF-01](../docs/PRD.md#auth-roles-y-tenants), [RNF-09](../docs/PRD.md#seguridad), [`ARQUITECTURA.md` §5.1](../docs/ARQUITECTURA.md).
 
 ---
 

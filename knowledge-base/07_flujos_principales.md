@@ -18,6 +18,14 @@ Flujos extremo a extremo observados o inferidos de la herramienta.
 
 **Suposición:** el campo de autenticación es `legajo` (es la natural key del docente).
 
+> ⚠️ **Corrección para activia-trace** — este flujo es el del sistema VIEJO. NO replicar:
+> - Login por **email + password (hash Argon2id) + 2FA opcional (TOTP)**, NUNCA por legajo. El legajo es atributo de negocio, no credencial. ([RF-01](../docs/PRD.md#auth-roles-y-tenants))
+> - Sesión = **JWT firmado** (access 15 min + refresh con rotación), no cookie de sesión PHP. ([RNF-09](../docs/PRD.md#seguridad))
+> - La identidad y el tenant salen **exclusivamente del JWT verificado**. Ningún `?leg=X`, id en query/body/header puede cambiar quién sos → así se mata [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver).
+> - Recuperación de contraseña por email con token de un solo uso. ([RF-02](../docs/PRD.md#auth-roles-y-tenants))
+>
+> Detalle en [`docs/ARQUITECTURA.md` §5](../docs/ARQUITECTURA.md).
+
 ---
 
 ## FL-02 — Importar calificaciones y detectar atrasados (flujo central del PROFESOR)

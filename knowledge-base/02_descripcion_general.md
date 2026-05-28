@@ -96,6 +96,8 @@ El sistema maneja **dos catálogos de materias distintos** que no se cruzan visu
 - **Sesión por servidor**: `logout.php` y cookies de sesión PHP.
 - **Datos sensibles redactados en accessibility tree**: los hidden inputs muestran `[value redacted]`.
 
+> 🔴 **Falla crítica observada (NO replicar)**: existe **impersonation por URL `?leg=X`** que permite cambiar de identidad (incluido super-admin) — Broken Access Control, OWASP A01. activia-trace lo elimina de raíz: identidad **solo desde JWT firmado**, RBAC fino, multi-tenant, impersonation auditada. Ver [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) y [`ARQUITECTURA.md` §5](../docs/ARQUITECTURA.md).
+
 ## Branding
 
 - Marca: **PulseUPs®** (con registro ®)

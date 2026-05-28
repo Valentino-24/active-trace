@@ -22,6 +22,8 @@ Inconsistencias detectadas y preguntas que requieren validación con el responsa
 
 **Implicación de seguridad**: si no está logueado quién dispara `?leg=X`, cualquier acción del impersonator queda atribuida al impersonated, lo cual rompe la trazabilidad.
 
+> 🔴 **Esta es una pregunta sobre olsoft, pero la dirección de diseño en activia-trace ya está cerrada**: clasificada como [P11 CRÍTICO (OWASP A01)](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver). Se elimina de raíz (identidad solo desde JWT; impersonation legítima permisada y auditada). **Lo único pendiente de verificar** es si en olsoft el `?leg=X` funciona también **sin sesión previa** (full pre-auth bypass) — eso es [ADR-004](../docs/ARQUITECTURA.md) y no cambia el diseño destino, solo la severidad documentada del sistema viejo.
+
 ### PA-22 — ¿Cuántas "claves de Plus" existen y cómo se mapean a materias?
 **Observación**: en `salarios.php` se vio solo la clave `PROG` (Plus Programación) con valores para PROFESOR/TUTOR/COORDINADOR.
 
@@ -83,6 +85,8 @@ Los IDs colisionan pero los nombres no coinciden:
 - ¿Hay "Recordarme"?
 - ¿Hay flujo de recuperación de contraseña?
 - ¿Hay self-service signup o solo alta administrativa?
+
+> ✅ **Dirección de diseño cerrada para activia-trace** (independiente de lo que haga olsoft): login por **email + password (Argon2id) + 2FA opcional (TOTP)**; recuperación por email con token de un solo uso; alta administrativa (signup self-service NO en MVP). Ver [RF-01/RF-02](../docs/PRD.md#auth-roles-y-tenants) y [`ARQUITECTURA.md` §5.1](../docs/ARQUITECTURA.md). Decisión auth propio vs Moodle SSO → [ADR-001 / OQ-04](../docs/PRD.md#12-open-questions-a-resolver-antes-de-cerrar-el-prd).
 
 ---
 

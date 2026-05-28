@@ -21,6 +21,7 @@ const files = [
   { path: path.join(KB, '10_preguntas_abiertas.md'),        label: 'KB · 10 — Preguntas Abiertas' },
   { path: path.join(KB, '11_historias_de_usuario.md'),      label: 'KB · 11 — Historias de Usuario' },
   { path: path.join(DOCS, 'PRD.md'),                        label: 'PRD — activia-trace' },
+  { path: path.join(DOCS, 'ARQUITECTURA.md'),               label: 'Arquitectura — activia-trace (destino)' },
 ];
 
 marked.setOptions({
@@ -201,10 +202,12 @@ for (const f of files) {
   const html = marked.parse(raw);
   const slug = slugify(f.label);
   const isKB = f.label.startsWith('KB');
+  const isArch = f.label.startsWith('Arquitectura');
+  const tag = isKB ? 'Knowledge Base' : isArch ? 'Arquitectura (destino)' : 'Product Requirements Document';
   body += `
 <div class="section" id="${slug}">
   <div class="section-header">
-    <div class="tag">${isKB ? 'Knowledge Base' : 'Product Requirements Document'}</div>
+    <div class="tag">${tag}</div>
   </div>
   <div class="markdown">
     ${html}

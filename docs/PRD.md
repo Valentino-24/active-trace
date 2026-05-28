@@ -44,6 +44,17 @@ La institución (TUPAD inicial, escalable a otras carreras) usa **Moodle** como 
 | P8 | **Mezcla `action`/`accion` y typos en seed** | [IM-01](../knowledge-base/10_preguntas_abiertas.md#im-01), [IM-02](../knowledge-base/10_preguntas_abiertas.md#im-02) | Refleja falta de code review y QA de contenido |
 | P9 | **Auditoría capada a 200 acciones recientes en UI** | [F9.2](../knowledge-base/06_funcionalidades.md#f92--log-de-auditoría-completo) | Investigación de incidentes lejana imposible |
 | P10 | **Modelo de roles ambiguo** (no se sabe qué hace TUTOR) | [PA-02](../knowledge-base/10_preguntas_abiertas.md#pa-02) | Permisos opacos, decisiones de authz inconsistentes |
+| **P11** | **🔴 CRÍTICO — Broken Access Control vía `?leg=X` (OWASP A01)** | [RN-41](../knowledge-base/05_reglas_de_negocio.md#rn-41), [PA-21](../knowledge-base/10_preguntas_abiertas.md#pa-21), [OQ-14](#12-open-questions-a-resolver-antes-de-cerrar-el-prd) | Cambiar un parámetro de URL escala privilegios a otra identidad (incl. super-admin) sin re-autenticación. Toda acción del impersonator queda atribuida al impersonated → trazabilidad rota. **El #1 del OWASP Top 10.** |
+
+> ### 🔴 Nota de severidad — P11 es bloqueante de seguridad
+>
+> El mecanismo `?leg=X` permite **cambiar de identidad alterando un parámetro de URL** (evidencia: la navegación a `/?leg=1` cambió el contexto del usuario logueado de *Cortez Alberto* a *Rodriguez Georgina*, legajo 1 — super-admin). Esto es **Broken Access Control (OWASP A01:2021)** — la categoría #1 del Top 10.
+>
+> **Lo que está CONFIRMADO**: un usuario con sesión activa escala a otra identidad (incluida la de máximos privilegios) sin re-autenticación ni segunda verificación.
+>
+> **Lo que requiere VERIFICACIÓN (no afirmar sin probar)**: si el `?leg=X` funciona también **sin sesión previa** (totalmente pre-auth). De confirmarse, la severidad pasa de *privilege escalation* a *full authentication bypass*. Ligado a [PA-04](../knowledge-base/10_preguntas_abiertas.md#pa-04) (flujo de login) y [OQ-14](#12-open-questions-a-resolver-antes-de-cerrar-el-prd).
+>
+> **Cómo lo mata activia-trace**: la identidad **JAMÁS** se deriva de un parámetro de request ([RF-04](#auth-roles-y-tenants) RBAC real, no flag binario `is_admin`); la sesión sale exclusivamente de un JWT firmado y de corta vida ([RNF-09](#seguridad)); la impersonation legítima (soporte) es una feature **explícita, permisada y 100% auditada** ([RF-05](#auth-roles-y-tenants), [RNF-12](#seguridad)) — nunca un efecto colateral de editar la URL. Ver detalle en [`docs/ARQUITECTURA.md`](./ARQUITECTURA.md) §Seguridad.
 
 ### 1.3 Lo que PulseUPs SÍ hace bien — y queremos conservar
 
@@ -239,6 +250,8 @@ Requirements numerados como **RF-XX** (funcional) y **RNF-XX** (no funcional). C
 ### 6.1 Requirements funcionales — MVP (Fase 1)
 
 #### Auth, Roles y Tenants
+
+> 🔐 Este bloque (RF-01 a RF-05) + RNF-07..12 son la respuesta directa a [P11](#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) (Broken Access Control vía `?leg=X`). Diseño completo en [`ARQUITECTURA.md` §5 Seguridad](./ARQUITECTURA.md). **Regla de oro**: la identidad y el tenant se derivan EXCLUSIVAMENTE del JWT verificado — nunca de un parámetro de request.
 
 - **RF-01** — Login con email + password + 2FA opcional (TOTP). Resuelve [PA-04](../knowledge-base/10_preguntas_abiertas.md#pa-04). [HU-45](../knowledge-base/11_historias_de_usuario.md#hu-45--ofcial---login-del-usuario)
 - **RF-02** — Recuperación de contraseña por email.

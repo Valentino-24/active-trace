@@ -621,6 +621,8 @@ Historias de usuario derivadas del análisis funcional. Formato **Connextra** (C
 - La sesión PHP se destruye server-side.
 - Redirect a pantalla de login (→ [PA-04](10_preguntas_abiertas.md#pa-04)).
 
+> ⚠️ **Corrección para activia-trace**: no hay "sesión PHP". Cerrar sesión **revoca el refresh token** (rotación) y descarta el access JWT en el cliente. Ver [RF-46](../docs/PRD.md#perfil) y [`ARQUITECTURA.md` §5.1](../docs/ARQUITECTURA.md).
+
 → Ref: [F11.3](06_funcionalidades.md#f113--logout)
 
 ---
@@ -678,10 +680,17 @@ Historias de usuario derivadas del análisis funcional. Formato **Connextra** (C
 **Quiero** loguearme en la plataforma
 **Para** acceder a mis pantallas según mi rol.
 
-**CA pendientes** (→ [PA-04](10_preguntas_abiertas.md#pa-04)):
+**CA pendientes** (observado en olsoft → [PA-04](10_preguntas_abiertas.md#pa-04)):
 - ¿Identificador es legajo o email?
 - ¿Hay 2FA, "recordarme", recuperación de password?
 - ¿Hay self-service signup o solo alta admin?
+
+> ✅ **CA destino para activia-trace** (esto NO es pendiente — ya está decidido):
+> - Login por **email + password (Argon2id)** — nunca por legajo.
+> - **2FA opcional (TOTP)** + recuperación por email con token de un solo uso. Sin self-service signup en MVP (alta administrativa).
+> - Sesión = **JWT** (access 15 min + refresh rotation), no cookie de sesión PHP.
+> - Identidad/tenant **solo desde el JWT** — ningún `?leg=X` cambia de usuario ([P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver)).
+> - Ref: [RF-01](../docs/PRD.md#auth-roles-y-tenants), [RNF-09](../docs/PRD.md#seguridad), [`ARQUITECTURA.md` §5](../docs/ARQUITECTURA.md).
 
 ---
 

@@ -155,6 +155,8 @@ Las acciones se codifican con strings tipo `MOD_MIS_EQUIPOS`. **Suposición:** e
 ### RN-25 — Legajo es la natural key del docente
 El docente se identifica por `legajo` (no por id autonumérico). Visible en URLs, formularios y tablas.
 
+> ⚠️ **Corrección para activia-trace**: exponer el `legajo` como identidad en URLs fue parte de la causa de [RN-41](#rn-41--impersonation-vía-legx) / [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver). En activia-trace la **identidad de auth es un UUID interno**; el `legajo` se conserva solo como **atributo de negocio** (no es credencial ni selector de identidad).
+
 ### RN-26 — Datos bancarios obligatorios para liquidar
 El profesor tiene banco, CBU, alias CBU obligatorios para que pueda recibir liquidaciones.
 
@@ -255,3 +257,5 @@ El sistema permite a un super-admin **operar como otro docente** pasando `?leg=<
 **Implicación de seguridad**: este mecanismo debería estar restringido a usuarios con permiso de impersonation. Cada impersonation idealmente debería loguearse en el audit log con quién la inició.
 
 → Ver pregunta abierta [PA-21](10_preguntas_abiertas.md#pa-21).
+
+> 🔴 **Corrección para activia-trace — RN-41 es el pecado original (Broken Access Control, OWASP A01).** NO replicar bajo ninguna circunstancia. La identidad se deriva **exclusivamente del JWT firmado**; ningún parámetro de URL/body/header puede cambiar de usuario. La impersonation legítima (soporte) será una feature **explícita, permisada (`impersonation:use`) y 100% auditada** — quién, a quién, desde y hasta cuándo. Ver [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) y [`ARQUITECTURA.md` §5.3](../docs/ARQUITECTURA.md).

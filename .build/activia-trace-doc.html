@@ -147,7 +147,7 @@ a { color: #1a1a1a; text-decoration: underline; }
   <div class="meta">
     Generado el 2026-05-28<br/>
     Fuente: análisis directo de https://olsoft.online/evalia/mood/<br/>
-    13 secciones · 1 PDF consolidado
+    14 secciones · 1 PDF consolidado
   </div>
 </div>
 <div class="toc">
@@ -166,6 +166,7 @@ a { color: #1a1a1a; text-decoration: underline; }
 <li><span class="label">KB · 10 — Preguntas Abiertas</span></li>
 <li><span class="label">KB · 11 — Historias de Usuario</span></li>
 <li><span class="label">PRD — activia-trace</span></li>
+<li><span class="label">Arquitectura — activia-trace (destino)</span></li>
 </ol></div>
 
 <div class="section" id="kb-ndice">
@@ -533,6 +534,9 @@ a { color: #1a1a1a; text-decoration: underline; }
 <li><strong>Sesión por servidor</strong>: <code>logout.php</code> y cookies de sesión PHP.</li>
 <li><strong>Datos sensibles redactados en accessibility tree</strong>: los hidden inputs muestran <code>[value redacted]</code>.</li>
 </ul>
+<blockquote>
+<p>🔴 <strong>Falla crítica observada (NO replicar)</strong>: existe <strong>impersonation por URL <code>?leg=X</code></strong> que permite cambiar de identidad (incluido super-admin) — Broken Access Control, OWASP A01. activia-trace lo elimina de raíz: identidad <strong>solo desde JWT firmado</strong>, RBAC fino, multi-tenant, impersonation auditada. Ver <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a> y <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5</a>.</p>
+</blockquote>
 <h2>Branding</h2>
 <ul>
 <li>Marca: <strong>PulseUPs®</strong> (con registro ®)</li>
@@ -844,6 +848,40 @@ a { color: #1a1a1a; text-decoration: underline; }
 <h2>Rutas no autenticadas</h2>
 <p>Solo se infiere una: <strong>login</strong> (probablemente <code>login.php</code> o similar, no recorrida porque el usuario ya estaba logueado al inicio).</p>
 <p>→ Ver <a href="10_preguntas_abiertas.md#PA-04">10_preguntas_abiertas.md</a> para validar.</p>
+<hr>
+<h2>⚠️ Corrección para activia-trace — modelo de roles y permisos</h2>
+<blockquote>
+<p>Todo lo de arriba describe el modelo <strong>observado en PulseUPs/olsoft (el sistema que reemplazamos)</strong>. NO replicar. activia-trace corrige estos puntos:</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>Anti-patrón observado en olsoft</th>
+<th>Corrección en activia-trace</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Flag binario <code>is_admin</code></strong> ortogonal al rol (A3, D7) — permisos opacos</td>
+<td><strong>RBAC con permisos finos por feature</strong>. Roles ricos: <code>ALUMNO</code>, <code>TUTOR</code>, <code>PROFESOR</code>, <code>COORDINADOR</code>, <code>ADMIN</code>, <code>FINANZAS</code>. Sin flag binario. (<a href="../docs/PRD.md#auth-roles-y-tenants">RF-04</a>)</td>
+</tr>
+<tr>
+<td><strong>ADMIN FINANCIERO inferido</strong> (A4) sin rol explícito</td>
+<td>Rol <strong><code>FINANZAS</code></strong> de primera clase, con permisos propios sobre Salarios/Liquidaciones</td>
+</tr>
+<tr>
+<td><strong>Super-admin vía <code>?leg=1</code></strong> (impersonation por URL)</td>
+<td><strong>Identidad SOLO desde el JWT firmado</strong>. La impersonation legítima es feature explícita, permisada y 100% auditada. Ver <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a></td>
+</tr>
+<tr>
+<td><strong>ALUMNO es objeto, no usuario</strong> (A6)</td>
+<td><code>ALUMNO</code> es un <strong>rol/usuario real</strong> con portal propio (Fase 2)</td>
+</tr>
+<tr>
+<td><strong>Sin aislamiento entre instituciones</strong></td>
+<td>Todo rol vive <strong>dentro de un Tenant</strong>. Un usuario nunca ve datos de otro tenant (<a href="../docs/PRD.md#multi-tenancy">RNF-22</a>)</td>
+</tr>
+</tbody></table>
+<p>Detalle completo del modelo de seguridad en <a href="../docs/ARQUITECTURA.md"><code>docs/ARQUITECTURA.md</code> §5</a>.</p>
 
   </div>
 </div>
@@ -856,6 +894,14 @@ a { color: #1a1a1a; text-decoration: underline; }
     <h1>04 — Modelo de Datos</h1>
 <blockquote>
 <p>Todo este modelo está <strong>inferido a partir de UI</strong>. Los nombres reales de tablas/columnas pueden diferir.</p>
+</blockquote>
+<blockquote>
+<p>⚠️ <strong>Corrección estructural para activia-trace</strong> — este modelo refleja PulseUPs/olsoft (sistema viejo). El modelo destino corrige tres cosas de raíz (ver <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §6 y §8</a>):</p>
+<ol>
+<li><strong><code>Tenant</code> es la raíz de todo el modelo</strong>: cada entidad lleva <code>tenant_id</code> y los repositories filtran por tenant por defecto. Los datos jamás cruzan instituciones (<a href="../docs/PRD.md#multi-tenancy">RNF-22</a>).</li>
+<li><strong>Identidad de auth = UUID interno</strong>, no el <code>legajo</code>. El <code>legajo</code> queda como atributo de negocio (corrige <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a> / <a href="05_reglas_de_negocio.md#rn-25--legajo-es-la-natural-key-del-docente">RN-25</a>).</li>
+<li><strong>Padrón versionado</strong> (no upsert destructivo) y <strong>catálogo único de materias</strong> por tenant (corrige <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P2</a> y <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P1</a>).</li>
+</ol>
 </blockquote>
 <h2>Entidades principales detectadas</h2>
 <h3>E1 — Carrera</h3>
@@ -908,6 +954,9 @@ a { color: #1a1a1a; text-decoration: underline; }
   is_admin            : bool
 }
 </code></pre>
+<blockquote>
+<p>⚠️ <strong>Corrección para activia-trace</strong>: en el modelo destino, <code>legajo</code> deja de ser PK (la PK es un <strong>UUID</strong> de identidad); <code>is_admin</code> se reemplaza por <strong>roles + permisos finos (RBAC)</strong>; y la entidad lleva <code>tenant_id</code>. Datos sensibles (<code>cbu</code>, <code>dni</code>) van <strong>cifrados en reposo (AES-256)</strong> (<a href="../docs/PRD.md#seguridad">RNF-08</a>). Ver <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5</a>.</p>
+</blockquote>
 <h3>E5 — Asignación (Profesor ↔ Materia × Carrera × Cohorte × Comisión)</h3>
 <p><strong>Fuente</strong>: <code>admin_asignaciones.php</code>, <code>mis_equipos.php</code></p>
 <pre><code>Asignacion {
@@ -1410,6 +1459,9 @@ Profesor (1) ─── (N) AuditLog
 <h2>Dominio: Datos del Docente</h2>
 <h3>RN-25 — Legajo es la natural key del docente</h3>
 <p>El docente se identifica por <code>legajo</code> (no por id autonumérico). Visible en URLs, formularios y tablas.</p>
+<blockquote>
+<p>⚠️ <strong>Corrección para activia-trace</strong>: exponer el <code>legajo</code> como identidad en URLs fue parte de la causa de <a href="#rn-41--impersonation-v%C3%ADa-legx">RN-41</a> / <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a>. En activia-trace la <strong>identidad de auth es un UUID interno</strong>; el <code>legajo</code> se conserva solo como <strong>atributo de negocio</strong> (no es credencial ni selector de identidad).</p>
+</blockquote>
 <h3>RN-26 — Datos bancarios obligatorios para liquidar</h3>
 <p>El profesor tiene banco, CBU, alias CBU obligatorios para que pueda recibir liquidaciones.</p>
 <p><strong>Suposición:</strong> no se valida en la UI pero es requisito de negocio.</p>
@@ -1476,6 +1528,9 @@ Profesor (1) ─── (N) AuditLog
 <p><strong>Evidencia</strong>: navegación a <code>/?leg=1</code> cambia el contexto del usuario logueado (de Cortez Alberto a Rodriguez Georgina, legajo 1) y muestra el menú/datos de ese legajo.</p>
 <p><strong>Implicación de seguridad</strong>: este mecanismo debería estar restringido a usuarios con permiso de impersonation. Cada impersonation idealmente debería loguearse en el audit log con quién la inició.</p>
 <p>→ Ver pregunta abierta <a href="10_preguntas_abiertas.md#pa-21">PA-21</a>.</p>
+<blockquote>
+<p>🔴 <strong>Corrección para activia-trace — RN-41 es el pecado original (Broken Access Control, OWASP A01).</strong> NO replicar bajo ninguna circunstancia. La identidad se deriva <strong>exclusivamente del JWT firmado</strong>; ningún parámetro de URL/body/header puede cambiar de usuario. La impersonation legítima (soporte) será una feature <strong>explícita, permisada (<code>impersonation:use</code>) y 100% auditada</strong> — quién, a quién, desde y hasta cuándo. Ver <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a> y <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5.3</a>.</p>
+</blockquote>
 
   </div>
 </div>
@@ -1881,6 +1936,16 @@ Profesor (1) ─── (N) AuditLog
          → logout.php → destruye sesión → redirect a login
 </code></pre>
 <p><strong>Suposición:</strong> el campo de autenticación es <code>legajo</code> (es la natural key del docente).</p>
+<blockquote>
+<p>⚠️ <strong>Corrección para activia-trace</strong> — este flujo es el del sistema VIEJO. NO replicar:</p>
+<ul>
+<li>Login por <strong>email + password (hash Argon2id) + 2FA opcional (TOTP)</strong>, NUNCA por legajo. El legajo es atributo de negocio, no credencial. (<a href="../docs/PRD.md#auth-roles-y-tenants">RF-01</a>)</li>
+<li>Sesión = <strong>JWT firmado</strong> (access 15 min + refresh con rotación), no cookie de sesión PHP. (<a href="../docs/PRD.md#seguridad">RNF-09</a>)</li>
+<li>La identidad y el tenant salen <strong>exclusivamente del JWT verificado</strong>. Ningún <code>?leg=X</code>, id en query/body/header puede cambiar quién sos → así se mata <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a>.</li>
+<li>Recuperación de contraseña por email con token de un solo uso. (<a href="../docs/PRD.md#auth-roles-y-tenants">RF-02</a>)</li>
+</ul>
+<p>Detalle en <a href="../docs/ARQUITECTURA.md"><code>docs/ARQUITECTURA.md</code> §5</a>.</p>
+</blockquote>
 <hr>
 <h2>FL-02 — Importar calificaciones y detectar atrasados (flujo central del PROFESOR)</h2>
 <pre><code>[Profesor: Cortez Alberto]
@@ -2402,6 +2467,9 @@ Profesor (1) ─── (N) AuditLog
 <p><strong>Decisión</strong>: el docente se identifica universalmente por su <code>legajo</code> (entero), no por un UUID o email.</p>
 <p><strong>Evidencia</strong>: visible en URLs, en filtros, en campos <code>prof_leg</code>, <code>asig_leg</code>, <code>legs[]</code>, <code>responde_legs[]</code>.</p>
 <p><strong>Por qué importa</strong>: el sistema asume que el legajo es único, estable y disponible al alta. Si una institución no usa legajos, esto es bloqueante.</p>
+<blockquote>
+<p>⚠️ <strong>Decisión REVERTIDA en activia-trace</strong>: la identidad de auth es un <strong>UUID interno</strong>, no el legajo. El legajo es atributo de negocio. Exponerlo como identidad en URLs habilitó <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">RN-41 / P11</a>.</p>
+</blockquote>
 <hr>
 <h3>D3 — Scope por (profesor, materia) en datos operativos</h3>
 <p><strong>Decisión</strong>: los datos importados (calificaciones, umbrales, configuraciones) son <strong>propios del par (docente, materia)</strong>, no compartidos entre docentes.</p>
@@ -2427,6 +2495,9 @@ Profesor (1) ─── (N) AuditLog
 <p><strong>Decisión</strong>: el modelo de permisos es ortogonal: el <code>rol</code> académico (PROFESOR, COORDINADOR) determina <strong>qué se ve operativamente</strong>, mientras que <code>is_admin</code> determina <strong>qué se administra del sistema</strong>.</p>
 <p><strong>Evidencia</strong>: checkbox <code>is_admin</code> separado del campo de rol en <code>admin_profesores.php</code>.</p>
 <p><strong>Por qué importa</strong>: un profesor regular puede ser admin (super-usuario funcional), y un coordinador puede no serlo (solo coordina sin manipular el sistema).</p>
+<blockquote>
+<p>⚠️ <strong>Decisión REVERTIDA en activia-trace</strong>: el flag binario <code>is_admin</code> se reemplaza por <strong>RBAC con permisos finos por feature</strong> y roles ricos (<code>ALUMNO, TUTOR, PROFESOR, COORDINADOR, ADMIN, FINANZAS</code>). El flag binario producía permisos opacos (<a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P10</a>). Ver <a href="../docs/PRD.md#auth-roles-y-tenants">RF-04</a> y <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5.2</a>.</p>
+</blockquote>
 <hr>
 <h3>D8 — Vigencia temporal por asignación</h3>
 <p><strong>Decisión</strong>: cada asignación tiene <code>desde</code> y <code>hasta</code>. La validez se deriva del rango.</p>
@@ -2457,6 +2528,9 @@ Profesor (1) ─── (N) AuditLog
 <h3>S1 — Autenticación por legajo + password</h3>
 <p><strong>Suposición:</strong> el login pide legajo (o email) + password. No se observó la pantalla.</p>
 <p><strong>Cómo validar</strong>: cerrar sesión y revisar <code>login.php</code> o equivalente.</p>
+<blockquote>
+<p>⚠️ <strong>Definido para activia-trace</strong> (no suposición): login por <strong>email + password (Argon2id) + 2FA opcional (TOTP)</strong>, sesión por <strong>JWT</strong> (access 15 min + refresh rotation). Ver <a href="../docs/PRD.md#auth-roles-y-tenants">RF-01</a>, <a href="../docs/PRD.md#seguridad">RNF-09</a>, <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5.1</a>.</p>
+</blockquote>
 <hr>
 <h3>S2 — La columna &quot;Estado&quot; de asignaciones se computa server-side</h3>
 <p><strong>Suposición:</strong> los valores &quot;Vigente&quot; / &quot;Vencida&quot; se calculan al render comparando fechas con NOW(), no se guardan en DB.</p>
@@ -2543,6 +2617,9 @@ Profesor (1) ─── (N) AuditLog
 <p><strong>Observación</strong>: navegar a <code>https://olsoft.online/evalia/mood/?leg=1</code> cambia el contexto del usuario logueado al legajo indicado (probado: cambió de Cortez Alberto a Rodriguez Georgina, legajo 1).</p>
 <p><strong>Pregunta</strong>: ¿Queda registrado en audit log quién hizo la impersonation y cuándo? ¿Quiénes tienen permiso de impersonar? ¿Hay forma de &quot;salir&quot; del contexto impersonado o se mantiene hasta cierre de sesión?</p>
 <p><strong>Implicación de seguridad</strong>: si no está logueado quién dispara <code>?leg=X</code>, cualquier acción del impersonator queda atribuida al impersonated, lo cual rompe la trazabilidad.</p>
+<blockquote>
+<p>🔴 <strong>Esta es una pregunta sobre olsoft, pero la dirección de diseño en activia-trace ya está cerrada</strong>: clasificada como <a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11 CRÍTICO (OWASP A01)</a>. Se elimina de raíz (identidad solo desde JWT; impersonation legítima permisada y auditada). <strong>Lo único pendiente de verificar</strong> es si en olsoft el <code>?leg=X</code> funciona también <strong>sin sesión previa</strong> (full pre-auth bypass) — eso es <a href="../docs/ARQUITECTURA.md">ADR-004</a> y no cambia el diseño destino, solo la severidad documentada del sistema viejo.</p>
+</blockquote>
 <h3>PA-22 — ¿Cuántas &quot;claves de Plus&quot; existen y cómo se mapean a materias?</h3>
 <p><strong>Observación</strong>: en <code>salarios.php</code> se vio solo la clave <code>PROG</code> (Plus Programación) con valores para PROFESOR/TUTOR/COORDINADOR.</p>
 <p><strong>Pregunta</strong>: ¿Existen otras claves (BD, ING, MAT, etc.)? ¿Cómo se decide qué materias caen en cada clave? ¿Está hardcodeado o configurable?</p>
@@ -2589,6 +2666,9 @@ Profesor (1) ─── (N) AuditLog
 <li>¿Hay flujo de recuperación de contraseña?</li>
 <li>¿Hay self-service signup o solo alta administrativa?</li>
 </ul>
+<blockquote>
+<p>✅ <strong>Dirección de diseño cerrada para activia-trace</strong> (independiente de lo que haga olsoft): login por <strong>email + password (Argon2id) + 2FA opcional (TOTP)</strong>; recuperación por email con token de un solo uso; alta administrativa (signup self-service NO en MVP). Ver <a href="../docs/PRD.md#auth-roles-y-tenants">RF-01/RF-02</a> y <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5.1</a>. Decisión auth propio vs Moodle SSO → <a href="../docs/PRD.md#12-open-questions-a-resolver-antes-de-cerrar-el-prd">ADR-001 / OQ-04</a>.</p>
+</blockquote>
 <hr>
 <h3>PA-05 — ¿Cómo se da de alta una guardia?</h3>
 <p><strong>Observación</strong>: <code>mis_guardias.php</code> solo muestra el listado de 250 guardias, no se vio formulario de creación.</p>
@@ -3221,6 +3301,9 @@ Profesor (1) ─── (N) AuditLog
 <li>La sesión PHP se destruye server-side.</li>
 <li>Redirect a pantalla de login (→ <a href="10_preguntas_abiertas.md#pa-04">PA-04</a>).</li>
 </ul>
+<blockquote>
+<p>⚠️ <strong>Corrección para activia-trace</strong>: no hay &quot;sesión PHP&quot;. Cerrar sesión <strong>revoca el refresh token</strong> (rotación) y descarta el access JWT en el cliente. Ver <a href="../docs/PRD.md#perfil">RF-46</a> y <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5.1</a>.</p>
+</blockquote>
 <p>→ Ref: <a href="06_funcionalidades.md#f113--logout">F11.3</a></p>
 <hr>
 <h2>Épica 12 — Integraciones Externas</h2>
@@ -3266,12 +3349,22 @@ Profesor (1) ─── (N) AuditLog
 <p><strong>Como</strong> USUARIO con credenciales válidas
 <strong>Quiero</strong> loguearme en la plataforma
 <strong>Para</strong> acceder a mis pantallas según mi rol.</p>
-<p><strong>CA pendientes</strong> (→ <a href="10_preguntas_abiertas.md#pa-04">PA-04</a>):</p>
+<p><strong>CA pendientes</strong> (observado en olsoft → <a href="10_preguntas_abiertas.md#pa-04">PA-04</a>):</p>
 <ul>
 <li>¿Identificador es legajo o email?</li>
 <li>¿Hay 2FA, &quot;recordarme&quot;, recuperación de password?</li>
 <li>¿Hay self-service signup o solo alta admin?</li>
 </ul>
+<blockquote>
+<p>✅ <strong>CA destino para activia-trace</strong> (esto NO es pendiente — ya está decidido):</p>
+<ul>
+<li>Login por <strong>email + password (Argon2id)</strong> — nunca por legajo.</li>
+<li><strong>2FA opcional (TOTP)</strong> + recuperación por email con token de un solo uso. Sin self-service signup en MVP (alta administrativa).</li>
+<li>Sesión = <strong>JWT</strong> (access 15 min + refresh rotation), no cookie de sesión PHP.</li>
+<li>Identidad/tenant <strong>solo desde el JWT</strong> — ningún <code>?leg=X</code> cambia de usuario (<a href="../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a>).</li>
+<li>Ref: <a href="../docs/PRD.md#auth-roles-y-tenants">RF-01</a>, <a href="../docs/PRD.md#seguridad">RNF-09</a>, <a href="../docs/ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5</a>.</li>
+</ul>
+</blockquote>
 <hr>
 <h3>HU-46 ❓ — Crear una guardia</h3>
 <p><strong>Como</strong> TUTOR / PROFESOR
@@ -3519,7 +3612,20 @@ Profesor (1) ─── (N) AuditLog
 <td><a href="../knowledge-base/10_preguntas_abiertas.md#pa-02">PA-02</a></td>
 <td>Permisos opacos, decisiones de authz inconsistentes</td>
 </tr>
+<tr>
+<td><strong>P11</strong></td>
+<td><strong>🔴 CRÍTICO — Broken Access Control vía <code>?leg=X</code> (OWASP A01)</strong></td>
+<td><a href="../knowledge-base/05_reglas_de_negocio.md#rn-41">RN-41</a>, <a href="../knowledge-base/10_preguntas_abiertas.md#pa-21">PA-21</a>, <a href="#12-open-questions-a-resolver-antes-de-cerrar-el-prd">OQ-14</a></td>
+<td>Cambiar un parámetro de URL escala privilegios a otra identidad (incl. super-admin) sin re-autenticación. Toda acción del impersonator queda atribuida al impersonated → trazabilidad rota. <strong>El #1 del OWASP Top 10.</strong></td>
+</tr>
 </tbody></table>
+<blockquote>
+<h3>🔴 Nota de severidad — P11 es bloqueante de seguridad</h3>
+<p>El mecanismo <code>?leg=X</code> permite <strong>cambiar de identidad alterando un parámetro de URL</strong> (evidencia: la navegación a <code>/?leg=1</code> cambió el contexto del usuario logueado de <em>Cortez Alberto</em> a <em>Rodriguez Georgina</em>, legajo 1 — super-admin). Esto es <strong>Broken Access Control (OWASP A01:2021)</strong> — la categoría #1 del Top 10.</p>
+<p><strong>Lo que está CONFIRMADO</strong>: un usuario con sesión activa escala a otra identidad (incluida la de máximos privilegios) sin re-autenticación ni segunda verificación.</p>
+<p><strong>Lo que requiere VERIFICACIÓN (no afirmar sin probar)</strong>: si el <code>?leg=X</code> funciona también <strong>sin sesión previa</strong> (totalmente pre-auth). De confirmarse, la severidad pasa de <em>privilege escalation</em> a <em>full authentication bypass</em>. Ligado a <a href="../knowledge-base/10_preguntas_abiertas.md#pa-04">PA-04</a> (flujo de login) y <a href="#12-open-questions-a-resolver-antes-de-cerrar-el-prd">OQ-14</a>.</p>
+<p><strong>Cómo lo mata activia-trace</strong>: la identidad <strong>JAMÁS</strong> se deriva de un parámetro de request (<a href="#auth-roles-y-tenants">RF-04</a> RBAC real, no flag binario <code>is_admin</code>); la sesión sale exclusivamente de un JWT firmado y de corta vida (<a href="#seguridad">RNF-09</a>); la impersonation legítima (soporte) es una feature <strong>explícita, permisada y 100% auditada</strong> (<a href="#auth-roles-y-tenants">RF-05</a>, <a href="#seguridad">RNF-12</a>) — nunca un efecto colateral de editar la URL. Ver detalle en <a href="./ARQUITECTURA.md"><code>docs/ARQUITECTURA.md</code></a> §Seguridad.</p>
+</blockquote>
 <h3>1.3 Lo que PulseUPs SÍ hace bien — y queremos conservar</h3>
 <table>
 <thead>
@@ -3802,6 +3908,9 @@ Profesor (1) ─── (N) AuditLog
 <p>Requirements numerados como <strong>RF-XX</strong> (funcional) y <strong>RNF-XX</strong> (no funcional). Cada uno está vinculado a las <a href="../knowledge-base/11_historias_de_usuario.md">HUs de la KB</a> cuando aplica.</p>
 <h3>6.1 Requirements funcionales — MVP (Fase 1)</h3>
 <h4>Auth, Roles y Tenants</h4>
+<blockquote>
+<p>🔐 Este bloque (RF-01 a RF-05) + RNF-07..12 son la respuesta directa a <a href="#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a> (Broken Access Control vía <code>?leg=X</code>). Diseño completo en <a href="./ARQUITECTURA.md"><code>ARQUITECTURA.md</code> §5 Seguridad</a>. <strong>Regla de oro</strong>: la identidad y el tenant se derivan EXCLUSIVAMENTE del JWT verificado — nunca de un parámetro de request.</p>
+</blockquote>
 <ul>
 <li><strong>RF-01</strong> — Login con email + password + 2FA opcional (TOTP). Resuelve <a href="../knowledge-base/10_preguntas_abiertas.md#pa-04">PA-04</a>. <a href="../knowledge-base/11_historias_de_usuario.md#hu-45--ofcial---login-del-usuario">HU-45</a></li>
 <li><strong>RF-02</strong> — Recuperación de contraseña por email.</li>
@@ -4313,6 +4422,475 @@ Asignacion ─── (N) Calificacion
 <li><strong>Backlog inicial</strong>: convertir RF-01..46 en épicas y user stories sprintables.</li>
 <li><strong>Definir métricas baseline</strong> en PulseUPs (cuántos atrasados se detectan hoy, cuánto tarda el setup, etc.) para medir el delta del MVP.</li>
 </ol>
+
+  </div>
+</div>
+
+<div class="section" id="arquitectura-activia-trace-destino">
+  <div class="section-header">
+    <div class="tag">Arquitectura (destino)</div>
+  </div>
+  <div class="markdown">
+    <h1>Arquitectura — activia-trace</h1>
+<p><strong>Producto</strong>: activia-trace
+<strong>Versión del documento</strong>: 0.1 (draft inicial)
+<strong>Fecha</strong>: 2026-05-28
+<strong>Estado</strong>: Draft — arquitectura objetivo (target), aún sin implementación
+<strong>Referencias</strong>: <a href="./PRD.md">PRD</a> · <a href="../knowledge-base/08_arquitectura_propuesta.md">KB — arquitectura observada de PulseUPs</a> · <a href="../knowledge-base/04_modelo_de_datos.md">Modelo de datos</a></p>
+<blockquote>
+<p>⚠️ <strong>Diferencia clave con <code>knowledge-base/08</code></strong>: ese archivo documenta la arquitectura <strong>observada de PulseUPs</strong> (PHP MPA monolítico — el sistema que reemplazamos). <strong>Este</strong> documento define la arquitectura <strong>objetivo de activia-trace</strong>, que NO comparte nada con el stack viejo salvo el dominio.</p>
+</blockquote>
+<hr>
+<h2>1. Propósito y filosofía</h2>
+<p>activia-trace adopta <strong>el mismo stack y los mismos patrones que <a href="https://github.com/">active-ia</a> (correción automática)</strong> — un sistema hermano ya en producción, probado, con Clean Architecture. No reinventamos: clonamos lo que funciona y le sumamos lo que activia-trace necesita de más (multi-tenancy real, modelo de roles rico, auth a prueba de balas, integración Moodle por Web Services).</p>
+<p><strong>Principios rectores:</strong></p>
+<ol>
+<li><strong>CONCEPTOS &gt; CÓDIGO</strong> — la arquitectura se diseña antes de tipear. Este doc es el contrato.</li>
+<li><strong>Separación estricta de capas</strong> — la lógica de negocio nunca toca HTTP ni SQL directamente.</li>
+<li><strong>La identidad jamás se deriva de un parámetro de request</strong> — la lección #1 que aprendimos destripando PulseUPs (<a href="./PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a>).</li>
+<li><strong>Multi-tenant desde el día 0</strong> — no es un retrofit; es la raíz del modelo.</li>
+<li><strong>Todo audita</strong> — el nombre del producto es <em>trace</em>. Cada acción significativa queda atribuida.</li>
+</ol>
+<hr>
+<h2>2. Stack tecnológico</h2>
+<p>Clonado de active-ia salvo los <strong>deltas</strong> marcados (lo que activia-trace agrega).</p>
+<h3>Backend</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnología</th>
+<th>Notas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Lenguaje</td>
+<td><strong>Python 3.13</strong></td>
+<td>Igual que active-ia</td>
+</tr>
+<tr>
+<td>Framework</td>
+<td><strong>FastAPI</strong></td>
+<td>API REST async</td>
+</tr>
+<tr>
+<td>ORM</td>
+<td><strong>SQLAlchemy 2.0</strong> (async)</td>
+<td>Mapeo + queries en repositories</td>
+</tr>
+<tr>
+<td>Migraciones</td>
+<td><strong>Alembic</strong></td>
+<td>Una migración por cambio de schema</td>
+</tr>
+<tr>
+<td>Base de datos</td>
+<td><strong>PostgreSQL</strong></td>
+<td>JSONB para criterios/scores configurables</td>
+</tr>
+<tr>
+<td>Validación</td>
+<td><strong>Pydantic v2</strong></td>
+<td>DTOs request/response (schemas)</td>
+</tr>
+<tr>
+<td>Auth</td>
+<td><strong>JWT</strong> (access corto + refresh rotation) + <strong>Argon2id</strong> para hashing de passwords</td>
+<td>🔶 <em>delta</em>: active-ia usa JWT simple; acá endurecemos (ver §5)</td>
+</tr>
+<tr>
+<td>Cifrado en reposo</td>
+<td><strong>AES-256</strong></td>
+<td>Para PII sensible (CBU, DNI) y secretos</td>
+</tr>
+<tr>
+<td>Background jobs</td>
+<td><strong>Worker async</strong> (cola de mails)</td>
+<td>🔶 <em>delta vs active-ia</em>: PulseUPs tenía worker Pend→Send→OK/Fail; lo replicamos</td>
+</tr>
+<tr>
+<td>Integraciones</td>
+<td><strong>N8N</strong> + <strong>Moodle Web Services</strong></td>
+<td>🔶 <em>delta</em>: Moodle WS (<code>core_grades_get_grades</code>, etc.) es nuevo</td>
+</tr>
+<tr>
+<td>Testing</td>
+<td><strong>pytest</strong> + coverage</td>
+<td>≥80% líneas, ≥90% reglas de negocio (<a href="./PRD.md#mantenibilidad">RNF-15</a>)</td>
+</tr>
+</tbody></table>
+<h3>Frontend</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnología</th>
+<th>Notas</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Framework</td>
+<td><strong>React 18</strong> + <strong>TypeScript</strong></td>
+<td>Sin <code>any</code>, sin class components</td>
+</tr>
+<tr>
+<td>Bundler</td>
+<td><strong>Vite</strong></td>
+<td>HMR en dev</td>
+</tr>
+<tr>
+<td>Server state</td>
+<td><strong>React Query (TanStack Query)</strong></td>
+<td>Todo fetch pasa por hooks de <code>services/</code></td>
+</tr>
+<tr>
+<td>Forms</td>
+<td><strong>React Hook Form + Zod</strong></td>
+<td>Validación tipada</td>
+</tr>
+<tr>
+<td>Estilos</td>
+<td><strong>Tailwind CSS</strong></td>
+<td>Sin CSS modules, sin inline (salvo valores dinámicos)</td>
+</tr>
+<tr>
+<td>HTTP</td>
+<td><strong>Axios</strong></td>
+<td>Cliente centralizado en <code>@/shared/services/api</code></td>
+</tr>
+<tr>
+<td>Estructura</td>
+<td><strong>Feature-based modules</strong></td>
+<td><code>features/{name}/{components,hooks,services,types,pages}</code></td>
+</tr>
+</tbody></table>
+<h3>Infraestructura</h3>
+<table>
+<thead>
+<tr>
+<th>Componente</th>
+<th>Tecnología</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Contenedores</td>
+<td><strong>Docker</strong> + docker-compose (local y prod)</td>
+</tr>
+<tr>
+<td>Deploy</td>
+<td><strong>Easypanel</strong> (igual que active-ia)</td>
+</tr>
+<tr>
+<td>Observabilidad</td>
+<td>Logs estructurados JSON + <strong>OpenTelemetry</strong> (<a href="./PRD.md#mantenibilidad">RNF-17</a>)</td>
+</tr>
+<tr>
+<td>CI/CD</td>
+<td>build + test + lint + deploy automatizado (<a href="./PRD.md#mantenibilidad">RNF-16</a>)</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>3. Arquitectura backend — Clean Architecture</h2>
+<p>Idéntico patrón a active-ia. El flujo de una request es <strong>unidireccional</strong> y cada capa tiene una sola responsabilidad:</p>
+<pre><code>REQUEST
+   │
+   ▼
+┌──────────────┐  HTTP, validación Pydantic, auth/authz. NADA de lógica de negocio.
+│   Routers    │
+└──────┬───────┘
+       ▼
+┌──────────────┐  Lógica de negocio. NO accede a la DB directamente.
+│   Services   │
+└──────┬───────┘
+       ▼
+┌──────────────┐  TODAS las queries SQLAlchemy. NADA de reglas de negocio.
+│ Repositories │
+└──────┬───────┘
+       ▼
+┌──────────────┐  Entidades ORM (SQLAlchemy).
+│    Models    │
+└──────┬───────┘
+       ▼
+   PostgreSQL
+</code></pre>
+<p><strong>Reglas no negociables</strong> (heredadas de active-ia, ampliadas):</p>
+<ul>
+<li><p><strong>Nunca</strong> lógica de negocio en Routers.</p>
+</li>
+<li><p><strong>Nunca</strong> acceso directo a DB desde Services (siempre vía Repository).</p>
+</li>
+<li><p>Secretos (API keys, tokens externos) <strong>siempre</strong> AES-256 — jamás en texto plano.</p>
+</li>
+<li><p><strong>Soft delete</strong> siempre (audit). Nunca hard delete.</p>
+</li>
+<li><p>Validar permisos por rol <strong>en cada endpoint</strong> — y además scope por tenant (ver §6).</p>
+</li>
+<li><p>Máximo <strong>500 LOC por archivo</strong> backend.</p>
+</li>
+<li><p>Manejo de errores estandarizado:</p>
+<table>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Respuesta</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Validación</td>
+<td><code>HTTPException 400</code></td>
+</tr>
+<tr>
+<td>No autenticado</td>
+<td><code>HTTPException 401</code></td>
+</tr>
+<tr>
+<td>Sin permiso (authz)</td>
+<td><code>HTTPException 403</code></td>
+</tr>
+<tr>
+<td>No encontrado</td>
+<td><code>HTTPException 404</code></td>
+</tr>
+<tr>
+<td>Error IA / N8N / Moodle</td>
+<td><code>HTTPException 502</code> + retry</td>
+</tr>
+<tr>
+<td>Interno</td>
+<td><code>HTTPException 500</code> + log detallado</td>
+</tr>
+</tbody></table>
+</li>
+</ul>
+<hr>
+<h2>4. Estructura de directorios</h2>
+<h3>Backend (<code>backend/</code>)</h3>
+<pre><code>backend/
+├── app/
+│   ├── main.py                  # Bootstrap FastAPI
+│   ├── api/v1/routers/          # Routers por dominio
+│   ├── core/
+│   │   ├── config.py            # Settings (env vars)
+│   │   ├── security.py          # JWT, Argon2, AES-256
+│   │   ├── permissions.py       # RBAC: matriz rol × permiso
+│   │   ├── tenancy.py           # 🔶 NUEVO: resolución y aislamiento de tenant
+│   │   ├── dependencies.py      # DI: get_current_user, get_tenant, require_permission
+│   │   └── exceptions.py
+│   ├── models/                  # SQLAlchemy ORM
+│   ├── schemas/                 # Pydantic DTOs
+│   ├── repositories/            # Queries (tenant-scoped por defecto)
+│   ├── services/                # Lógica de negocio
+│   ├── integrations/
+│   │   ├── n8n_client.py
+│   │   └── moodle_ws.py         # 🔶 NUEVO: cliente Moodle Web Services
+│   └── workers/                 # 🔶 NUEVO: worker de cola de mails
+├── alembic/                     # Migraciones
+└── tests/
+</code></pre>
+<h3>Frontend (<code>frontend/</code>)</h3>
+<pre><code>frontend/src/
+├── features/
+│   └── {dominio}/               # auth, alumnos, materias, comisiones,
+│       ├── components/          #   atrasados, comunicacion, equipos,
+│       ├── hooks/               #   encuentros, coloquios, liquidaciones,
+│       ├── services/            #   auditoria, perfil
+│       ├── types/
+│       └── pages/
+└── shared/
+    ├── services/api.ts          # Axios centralizado + interceptor JWT/refresh
+    ├── components/              # UI reutilizable
+    └── hooks/
+</code></pre>
+<hr>
+<h2>5. Modelo de seguridad — el corazón de activia-trace</h2>
+<blockquote>
+<p>Esta sección existe porque <strong>el pecado original de PulseUPs era de seguridad</strong> (<a href="./PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P11</a>). Si fallamos acá, fallamos en todo.</p>
+</blockquote>
+<h3>5.1 Autenticación</h3>
+<ul>
+<li>Login con <strong>email + password</strong> (<a href="./PRD.md#auth-roles-y-tenants">RF-01</a>). Password hasheado con <strong>Argon2id</strong> (nunca MD5/SHA simple, nunca texto plano).</li>
+<li><strong>2FA opcional (TOTP)</strong> por usuario.</li>
+<li>Recuperación de contraseña por email con token de un solo uso y expiración corta (<a href="./PRD.md#auth-roles-y-tenants">RF-02</a>).</li>
+<li>Sesión = <strong>JWT firmado</strong>, access token de vida corta (<strong>15 min</strong>, <a href="./PRD.md#seguridad">RNF-09</a>) + <strong>refresh token con rotación</strong> (un refresh usado se invalida).</li>
+<li>El JWT lleva claims mínimos: <code>sub</code> (user id), <code>tenant_id</code>, <code>roles</code>, <code>exp</code>. <strong>Nada de permisos en el token</strong> — se resuelven server-side.</li>
+</ul>
+<h3>5.2 Autorización (RBAC)</h3>
+<ul>
+<li>Roles ricos (<a href="./PRD.md#auth-roles-y-tenants">RF-04</a>): <strong>ALUMNO, TUTOR, PROFESOR, COORDINADOR, ADMIN, FINANZAS</strong>. (Reemplaza el flag binario <code>is_admin</code> opaco de PulseUPs, <a href="./PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P10</a>).</li>
+<li><strong>Permisos finos por feature</strong>, no por rol monolítico. Matriz rol × permiso en <code>core/permissions.py</code>.</li>
+<li>Cada endpoint declara el permiso requerido vía dependency (<code>require_permission(&quot;entregas:write&quot;)</code>). Sin él → <code>403</code>.</li>
+</ul>
+<h3>5.3 Cómo activia-trace MATA la vuln <code>?leg=X</code> (P11)</h3>
+<table>
+<thead>
+<tr>
+<th>Vector en PulseUPs</th>
+<th>Defensa en activia-trace</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>La identidad salía de un <strong>parámetro de URL</strong> (<code>?leg=1</code>)</td>
+<td>La identidad <strong>solo</strong> sale del JWT firmado y verificado. Ningún parámetro de request puede alterar quién sos.</td>
+</tr>
+<tr>
+<td>Cambio de identidad <strong>sin re-autenticar</strong></td>
+<td>Cambiar de identidad es imposible sin un nuevo login (o sin la feature de impersonation permisada — ver abajo).</td>
+</tr>
+<tr>
+<td>Privilegio derivado de <code>is_admin</code> binario</td>
+<td>RBAC con permisos finos resueltos server-side en cada request.</td>
+</tr>
+<tr>
+<td>Impersonation <strong>silenciosa, no auditada</strong></td>
+<td>La impersonation legítima (soporte/admin) es una <strong>feature explícita</strong>: requiere permiso <code>impersonation:use</code>, genera un <strong>token de impersonation distinguible</strong>, y <strong>registra en el audit log</strong> quién impersona a quién, desde cuándo y hasta cuándo (<a href="./PRD.md#auth-roles-y-tenants">RF-05</a>, <a href="./PRD.md#seguridad">RNF-12</a>). Toda acción bajo impersonation queda atribuida al actor real, no a la víctima.</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>Regla de oro grabada en piedra</strong>: <em>la identidad y el tenant del request se derivan EXCLUSIVAMENTE del JWT verificado. Cualquier <code>id</code>, <code>legajo</code> o <code>tenant</code> que venga en query string, body o header se trata como dato de entrada a validar contra los permisos del usuario actual — NUNCA como su identidad.</em></p>
+</blockquote>
+<h3>5.4 Otras defensas transversales</h3>
+<ul>
+<li><strong>HTTPS/TLS 1.3</strong> en todo el tráfico (<a href="./PRD.md#seguridad">RNF-07</a>).</li>
+<li><strong>PII cifrada en reposo</strong> (CBU, DNI) con AES-256 (<a href="./PRD.md#seguridad">RNF-08</a>).</li>
+<li><strong>CSRF protection</strong> en endpoints state-changing (<a href="./PRD.md#seguridad">RNF-10</a>).</li>
+<li><strong>Rate limiting</strong> por IP y por usuario (<a href="./PRD.md#seguridad">RNF-11</a>).</li>
+<li><strong>Audit log append-only</strong> (idealmente write-once), sin límite de retención (<a href="./PRD.md#seguridad">RNF-12</a>, <a href="./PRD.md#auditor%C3%ADa">RF-38</a>) — corrige el cap de 200 de PulseUPs.</li>
+</ul>
+<hr>
+<h2>6. Multi-tenancy</h2>
+<p>🔶 <strong>Esto NO existe en active-ia ni en PulseUPs</strong> — es nativo de activia-trace (<a href="./PRD.md#auth-roles-y-tenants">RF-03</a>, <a href="./PRD.md#multi-tenancy">RNF-22</a>).</p>
+<ul>
+<li><strong>Tenant</strong> es el primer nivel del modelo (una institución = un tenant; TUPAD es el primero).</li>
+<li><strong>Estrategia (a decidir en ADR-002, ver §10)</strong>: row-level security como mínimo (columna <code>tenant_id</code> en toda tabla + filtro automático en cada repository), database-per-tenant si el negocio lo justifica.</li>
+<li>El <code>tenant_id</code> se resuelve del JWT (§5.1) y se inyecta vía dependency. <strong>Los repositories filtran por tenant por defecto</strong> — un query sin scope de tenant es un bug que debe fallar en code review.</li>
+<li><strong>Los datos jamás cruzan tenants.</strong> Test obligatorio: un usuario del tenant A nunca puede leer/escribir datos del tenant B.</li>
+<li>Configuración por tenant (<a href="./PRD.md#multi-tenancy">RNF-23</a>): idioma, branding, plantillas de mail, catálogo de escalas textuales, flag de aprobación de mails.</li>
+</ul>
+<hr>
+<h2>7. Integraciones</h2>
+<h3>7.1 Moodle (Web Services) — 🔶 nuevo</h3>
+<ul>
+<li>Sync vía Moodle WS: <code>core_grades_get_grades</code>, <code>core_user_get_users_by_field</code>, etc. (<a href="./PRD.md#ingesta-y-datos">RF-06</a>).</li>
+<li><strong>Sync nocturna automática</strong> + sync on-demand.</li>
+<li><strong>Fallback</strong>: import manual <code>.xlsx</code>/<code>.csv</code> para tenants sin acceso WS (<a href="./PRD.md#ingesta-y-datos">RF-07</a>) — preserva el flujo conocido de PulseUPs.</li>
+<li>Cliente aislado en <code>integrations/moodle_ws.py</code>; los errores mapean a <code>502 + retry</code>.</li>
+</ul>
+<h3>7.2 Cola de mails (worker async) — 🔶 nuevo</h3>
+<ul>
+<li>Replica el modelo probado de PulseUPs: estados <strong>Pend → Send → OK/Fail</strong> y <strong>Pend → Canc</strong> (<a href="./PRD.md#comunicaci%C3%B3n">RF-18</a>).</li>
+<li><strong>Preview obligatorio</strong> antes de encolar (<a href="./PRD.md#comunicaci%C3%B3n">RF-17</a>).</li>
+<li><strong>Aprobación humana opcional por tenant</strong> (<a href="./PRD.md#comunicaci%C3%B3n">RF-19</a>).</li>
+<li>Plantillas con variables <code>{{alumno.nombre}}</code>, <code>{{materia.nombre}}</code> (<a href="./PRD.md#comunicaci%C3%B3n">RF-20</a>).</li>
+</ul>
+<h3>7.3 N8N</h3>
+<ul>
+<li>Igual que active-ia: orquestación de flujos. Se evalúa si activia-trace lo necesita en MVP o si el worker propio alcanza.</li>
+</ul>
+<hr>
+<h2>8. Persistencia y modelo de datos</h2>
+<ul>
+<li>PostgreSQL. Modelo detallado heredado/evolucionado de <a href="../knowledge-base/04_modelo_de_datos.md"><code>knowledge-base/04</code></a>.</li>
+<li><strong>JSONB</strong> para estructuras configurables (criterios, escalas, scores).</li>
+<li>Cambios estructurales clave vs PulseUPs (ver <a href="./PRD.md">PRD §9</a>):<ul>
+<li><code>Tenant</code> como raíz.</li>
+<li><strong>Padrón con historial</strong> (versionado, no upsert destructivo — corrige <a href="./PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P2</a>).</li>
+<li><strong>Catálogo único de materias</strong> por tenant (corrige <a href="./PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver">P1</a>).</li>
+<li>Audit log append-only sin cap.</li>
+</ul>
+</li>
+<li><strong>Identidad de docente</strong>: PulseUPs usaba <code>legajo</code> como natural key visible en URLs (<a href="../knowledge-base/05_reglas_de_negocio.md#rn-25">RN-25</a>) — parte de la causa de P11. activia-trace usa <strong>id interno (UUID) para identidad/auth</strong> y conserva <code>legajo</code> solo como <strong>atributo de negocio</strong>, nunca como credencial ni como selector de identidad.</li>
+</ul>
+<hr>
+<h2>9. Convenciones</h2>
+<h3>Commits (Conventional Commits)</h3>
+<p><code>&lt;type&gt;(&lt;scope&gt;): &lt;descripción&gt;</code></p>
+<ul>
+<li><strong>Types</strong>: <code>feat</code>, <code>fix</code>, <code>refactor</code>, <code>docs</code>, <code>test</code>, <code>chore</code></li>
+<li><strong>Scopes</strong>: <code>auth</code>, <code>tenancy</code>, <code>users</code>, <code>alumnos</code>, <code>materias</code>, <code>comisiones</code>, <code>entregas</code>, <code>comunicacion</code>, <code>equipos</code>, <code>encuentros</code>, <code>coloquios</code>, <code>liquidaciones</code>, <code>auditoria</code>, <code>moodle</code>, <code>api</code>, <code>ui</code></li>
+<li><strong>Sin</strong> atribución AI / <code>Co-Authored-By</code>.</li>
+</ul>
+<h3>Código</h3>
+<ul>
+<li>Backend: Clean Architecture estricta (§3), ≤500 LOC/archivo.</li>
+<li>Frontend: componentes funcionales TS, &lt;200 LOC, pages lazy-loaded, loading + error states siempre.</li>
+</ul>
+<h3>Variables de entorno clave</h3>
+<table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>Propósito</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DATABASE_URL</code></td>
+<td>Conexión PostgreSQL</td>
+</tr>
+<tr>
+<td><code>SECRET_KEY</code></td>
+<td>Firma JWT (mín. 32 chars)</td>
+</tr>
+<tr>
+<td><code>ENCRYPTION_KEY</code></td>
+<td>AES-256 para PII/secretos (exactamente 32 chars)</td>
+</tr>
+<tr>
+<td><code>ACCESS_TOKEN_EXPIRE_MINUTES</code></td>
+<td>Expiración access token (default 15)</td>
+</tr>
+<tr>
+<td><code>MOODLE_WS_TOKEN</code> / <code>MOODLE_WS_URL</code></td>
+<td>Acceso a Moodle Web Services (por tenant)</td>
+</tr>
+<tr>
+<td><code>N8N_WEBHOOK_URL</code></td>
+<td>Servicio N8N</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>10. Decisiones de arquitectura pendientes (ADRs a redactar)</h2>
+<table>
+<thead>
+<tr>
+<th>ADR</th>
+<th>Decisión</th>
+<th>Estado</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>ADR-001</td>
+<td>¿Auth propio (email+pass) vs federado con Moodle SSO?</td>
+<td>Abierto — ligado a <a href="./PRD.md#12-open-questions-a-resolver-antes-de-cerrar-el-prd">OQ-04</a></td>
+</tr>
+<tr>
+<td>ADR-002</td>
+<td>Multi-tenancy: row-level (<code>tenant_id</code>) vs database-per-tenant</td>
+<td>Abierto — ligado a <a href="./PRD.md#12-open-questions-a-resolver-antes-de-cerrar-el-prd">OQ-06</a></td>
+</tr>
+<tr>
+<td>ADR-003</td>
+<td>Worker propio (asyncio/Celery/ARQ) vs N8N para la cola de mails</td>
+<td>Abierto</td>
+</tr>
+<tr>
+<td>ADR-004</td>
+<td>¿Verificar si <code>?leg=X</code> de PulseUPs es pre-auth (full bypass) o solo escalada post-login?</td>
+<td>Abierto — ligado a <a href="../knowledge-base/10_preguntas_abiertas.md#pa-21">PA-21</a> / P11</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>11. Resumen — deltas vs active-ia</h2>
+<p>Lo que activia-trace <strong>construye de más</strong> sobre la base de active-ia:</p>
+<ol>
+<li><strong>Multi-tenancy nativo</strong> (§6).</li>
+<li><strong>Modelo de roles rico + RBAC fino</strong> (§5.2) en vez de <code>is_admin</code> binario.</li>
+<li><strong>Auth endurecida</strong>: Argon2id, 2FA, access 15 min + refresh rotation, impersonation auditada (§5).</li>
+<li><strong>Integración Moodle por Web Services</strong> + fallback manual (§7.1).</li>
+<li><strong>Worker de cola de mails</strong> con preview y aprobación (§7.2).</li>
+<li><strong>Audit log append-only sin límite</strong> (§5.4).</li>
+<li><strong>Padrón versionado</strong> y <strong>catálogo único de materias</strong> (§8).</li>
+</ol>
+<p>Todo lo demás —Clean Architecture, FastAPI, SQLAlchemy, React/Vite/Tailwind/React Query, Docker/Easypanel— es <strong>clonado tal cual de active-ia</strong>.</p>
 
   </div>
 </div>

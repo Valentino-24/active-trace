@@ -2,6 +2,11 @@
 
 > Todo este modelo está **inferido a partir de UI**. Los nombres reales de tablas/columnas pueden diferir.
 
+> ⚠️ **Corrección estructural para activia-trace** — este modelo refleja PulseUPs/olsoft (sistema viejo). El modelo destino corrige tres cosas de raíz (ver [`ARQUITECTURA.md` §6 y §8](../docs/ARQUITECTURA.md)):
+> 1. **`Tenant` es la raíz de todo el modelo**: cada entidad lleva `tenant_id` y los repositories filtran por tenant por defecto. Los datos jamás cruzan instituciones ([RNF-22](../docs/PRD.md#multi-tenancy)).
+> 2. **Identidad de auth = UUID interno**, no el `legajo`. El `legajo` queda como atributo de negocio (corrige [P11](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) / [RN-25](05_reglas_de_negocio.md#rn-25--legajo-es-la-natural-key-del-docente)).
+> 3. **Padrón versionado** (no upsert destructivo) y **catálogo único de materias** por tenant (corrige [P2](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver) y [P1](../docs/PRD.md#12-problemas-observados-en-pulseups-que-activia-trace-debe-resolver)).
+
 ## Entidades principales detectadas
 
 ### E1 — Carrera
@@ -61,6 +66,8 @@ Profesor {
   is_admin            : bool
 }
 ```
+
+> ⚠️ **Corrección para activia-trace**: en el modelo destino, `legajo` deja de ser PK (la PK es un **UUID** de identidad); `is_admin` se reemplaza por **roles + permisos finos (RBAC)**; y la entidad lleva `tenant_id`. Datos sensibles (`cbu`, `dni`) van **cifrados en reposo (AES-256)** ([RNF-08](../docs/PRD.md#seguridad)). Ver [`ARQUITECTURA.md` §5](../docs/ARQUITECTURA.md).
 
 ### E5 — Asignación (Profesor ↔ Materia × Carrera × Cohorte × Comisión)
 **Fuente**: `admin_asignaciones.php`, `mis_equipos.php`
