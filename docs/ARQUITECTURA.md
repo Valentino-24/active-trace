@@ -203,7 +203,7 @@ El control de acceso de activia-trace se rige por los siguientes principios, que
 Multi-tenancy es nativo en activia-trace desde el día 0 ([RF-03](./PRD.md#auth-roles-y-tenants), [RNF-22](./PRD.md#multi-tenancy)).
 
 - **Tenant** es el primer nivel del modelo: una institución = un tenant.
-- **Estrategia (a decidir en ADR-002, ver §10)**: row-level security como mínimo (columna `tenant_id` en toda tabla + filtro automático en cada repository), database-per-tenant si el negocio lo justifica.
+- **Estrategia (ADR-002, cerrada — ver §10)**: **row-level** — columna `tenant_id` en toda tabla + filtro automático en cada repository. Una sola base de datos. Database-per-tenant se reevaluará solo si un tenant exige aislamiento físico regulatorio.
 - El `tenant_id` se resuelve del JWT (§5.1) y se inyecta vía dependency. **Los repositories filtran por tenant por defecto** — un query sin scope de tenant es un bug que debe fallar en code review.
 - **Los datos jamás cruzan tenants.** Test obligatorio: un usuario del tenant A nunca puede leer/escribir datos del tenant B.
 - Configuración por tenant ([RNF-23](./PRD.md#multi-tenancy)): idioma, branding, plantillas de mail, catálogo de escalas textuales, flag de aprobación de mails.

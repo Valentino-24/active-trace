@@ -501,14 +501,14 @@ Incluye RF-57 a RF-60.
 
 ### Heredadas de la KB
 
-- **OQ-01** — Validar [PA-01](../knowledge-base/10_preguntas_abiertas.md#pa-01) (modelo de materias: ¿una entidad o Materia + InstanciaDictado?). **Bloquea G3 y RF-11.**
+- ~~**OQ-01**~~ — ✅ **CERRADA**: modelo **Materia (catálogo único) + Dictado (instancia por carrera×cohorte)**. Ver [ADR-006 en ARQUITECTURA.md §10](./ARQUITECTURA.md).
 - **OQ-11** — ¿Cómo se mapean las claves de Plus a familias de materias? — [PA-22](../knowledge-base/10_preguntas_abiertas.md#pa-22).
 - **OQ-12** — ¿Cómo se calcula el Plus si un docente tiene N comisiones de la misma clave? — [PA-23](../knowledge-base/10_preguntas_abiertas.md#pa-23).
 - **OQ-13** — ¿Cuál es la semántica del rol NEXO (regional, programa, enlace con el alumno)? — [PA-25](../knowledge-base/10_preguntas_abiertas.md#pa-25).
 
 ### Específicas del PRD
 
-- **OQ-04** — ¿La institución acepta auth federado con Moodle SSO o prefiere login propio? Impacta RF-01 y RF-47.
+- ~~**OQ-04**~~ — ✅ **CERRADA**: **auth propio** (email+password+2FA) en el MVP; **Moodle SSO** para alumnos en Fase 2. Ver [ADR-001 en ARQUITECTURA.md §10](./ARQUITECTURA.md).
 - **OQ-05** — ¿Quién ejerce el rol FINANZAS hoy? ¿Existe de forma explícita o lo cubre el COORDINADOR?
 - **OQ-06** — ¿Hay otros tenants potenciales además de TUPAD? Si sí, ¿en qué horizonte? Impacta priorización de G4.
 - **OQ-07** — ¿La institución tiene presupuesto para hosting cloud o requiere self-host?

@@ -145,7 +145,7 @@ a { color: #1a1a1a; text-decoration: underline; }
   <h1>activia-trace</h1>
   <div class="subtitle">Base de Conocimiento + Product Requirements Document + Arquitectura</div>
   <div class="meta">
-    Generado el 2026-05-29<br/>
+    Generado el 2026-05-31<br/>
     Plataforma de gestión académica y trazabilidad de actividades estudiantiles<br/>
     14 secciones · 1 PDF consolidado
   </div>
@@ -4361,14 +4361,14 @@ Evaluacion (1) ─── (N) ResultadoEvaluacion
 </blockquote>
 <h3>Heredadas de la KB</h3>
 <ul>
-<li><strong>OQ-01</strong> — Validar <a href="../knowledge-base/10_preguntas_abiertas.md#pa-01">PA-01</a> (modelo de materias: ¿una entidad o Materia + InstanciaDictado?). <strong>Bloquea G3 y RF-11.</strong></li>
+<li><del><strong>OQ-01</strong></del> — ✅ <strong>CERRADA</strong>: modelo <strong>Materia (catálogo único) + Dictado (instancia por carrera×cohorte)</strong>. Ver <a href="./ARQUITECTURA.md">ADR-006 en ARQUITECTURA.md §10</a>.</li>
 <li><strong>OQ-11</strong> — ¿Cómo se mapean las claves de Plus a familias de materias? — <a href="../knowledge-base/10_preguntas_abiertas.md#pa-22">PA-22</a>.</li>
 <li><strong>OQ-12</strong> — ¿Cómo se calcula el Plus si un docente tiene N comisiones de la misma clave? — <a href="../knowledge-base/10_preguntas_abiertas.md#pa-23">PA-23</a>.</li>
 <li><strong>OQ-13</strong> — ¿Cuál es la semántica del rol NEXO (regional, programa, enlace con el alumno)? — <a href="../knowledge-base/10_preguntas_abiertas.md#pa-25">PA-25</a>.</li>
 </ul>
 <h3>Específicas del PRD</h3>
 <ul>
-<li><strong>OQ-04</strong> — ¿La institución acepta auth federado con Moodle SSO o prefiere login propio? Impacta RF-01 y RF-47.</li>
+<li><del><strong>OQ-04</strong></del> — ✅ <strong>CERRADA</strong>: <strong>auth propio</strong> (email+password+2FA) en el MVP; <strong>Moodle SSO</strong> para alumnos en Fase 2. Ver <a href="./ARQUITECTURA.md">ADR-001 en ARQUITECTURA.md §10</a>.</li>
 <li><strong>OQ-05</strong> — ¿Quién ejerce el rol FINANZAS hoy? ¿Existe de forma explícita o lo cubre el COORDINADOR?</li>
 <li><strong>OQ-06</strong> — ¿Hay otros tenants potenciales además de TUPAD? Si sí, ¿en qué horizonte? Impacta priorización de G4.</li>
 <li><strong>OQ-07</strong> — ¿La institución tiene presupuesto para hosting cloud o requiere self-host?</li>
@@ -4846,7 +4846,7 @@ Evaluacion (1) ─── (N) ResultadoEvaluacion
 <p>Multi-tenancy es nativo en activia-trace desde el día 0 (<a href="./PRD.md#auth-roles-y-tenants">RF-03</a>, <a href="./PRD.md#multi-tenancy">RNF-22</a>).</p>
 <ul>
 <li><strong>Tenant</strong> es el primer nivel del modelo: una institución = un tenant.</li>
-<li><strong>Estrategia (a decidir en ADR-002, ver §10)</strong>: row-level security como mínimo (columna <code>tenant_id</code> en toda tabla + filtro automático en cada repository), database-per-tenant si el negocio lo justifica.</li>
+<li><strong>Estrategia (ADR-002, cerrada — ver §10)</strong>: <strong>row-level</strong> — columna <code>tenant_id</code> en toda tabla + filtro automático en cada repository. Una sola base de datos. Database-per-tenant se reevaluará solo si un tenant exige aislamiento físico regulatorio.</li>
 <li>El <code>tenant_id</code> se resuelve del JWT (§5.1) y se inyecta vía dependency. <strong>Los repositories filtran por tenant por defecto</strong> — un query sin scope de tenant es un bug que debe fallar en code review.</li>
 <li><strong>Los datos jamás cruzan tenants.</strong> Test obligatorio: un usuario del tenant A nunca puede leer/escribir datos del tenant B.</li>
 <li>Configuración por tenant (<a href="./PRD.md#multi-tenancy">RNF-23</a>): idioma, branding, plantillas de mail, catálogo de escalas textuales, flag de aprobación de mails.</li>
