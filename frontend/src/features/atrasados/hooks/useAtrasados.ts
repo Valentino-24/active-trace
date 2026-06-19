@@ -13,7 +13,6 @@ export interface Atrasado {
 export function useAtrasados(materiaId?: string) {
   return useQuery<Atrasado[]>({
     queryKey: ['atrasados', materiaId],
-    queryFn: () => api.get('/analisis/atrasados', { params: { materia_id: materiaId } }).then(r => r.data),
-    enabled: !!materiaId,
+    queryFn: () => api.get('/analisis/atrasados', { params: materiaId ? { materia_id: materiaId } : {} }).then(r => r.data),
   });
 }

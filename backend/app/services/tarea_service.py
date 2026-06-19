@@ -73,7 +73,10 @@ class TareaService:
 
     def _is_admin(self) -> bool:
         """Check if current user has admin scope (COORDINADOR/ADMIN)."""
-        for ur in getattr(self._current_user, "roles", []):
+        roles = getattr(self._current_user, "roles", [])
+        if not isinstance(roles, list):
+            roles = [roles] if roles else []
+        for ur in roles:
             role = getattr(ur, "role", None)
             if role is not None and role.codigo in ("COORDINADOR", "ADMIN"):
                 return True

@@ -7,7 +7,7 @@ export default function ComunicacionesPage() {
 
   const { data: estados } = useQuery({
     queryKey: ['comunicaciones'],
-    queryFn: () => api.get('/comunicaciones').then(r => r.data),
+    queryFn: () => api.get('/comunicaciones/lotes').then(r => r.data),
   });
 
   const enviar = useMutation({

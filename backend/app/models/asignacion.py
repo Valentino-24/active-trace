@@ -79,6 +79,21 @@ class Asignacion(Base, TenantScopedMixin, SoftDeleteMixin):
         foreign_keys=[responsable_id],
         lazy="selectin",
     )
+    materia: Mapped["Materia | None"] = relationship(
+        "Materia",
+        foreign_keys=[materia_id],
+        lazy="selectin",
+    )
+    carrera: Mapped["Carrera | None"] = relationship(
+        "Carrera",
+        foreign_keys=[carrera_id],
+        lazy="selectin",
+    )
+    cohorte: Mapped["Cohorte | None"] = relationship(
+        "Cohorte",
+        foreign_keys=[cohorte_id],
+        lazy="selectin",
+    )
 
     # ── Computed properties ─────────────────────────────────────────────
 

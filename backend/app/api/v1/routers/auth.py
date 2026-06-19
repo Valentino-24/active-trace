@@ -354,3 +354,26 @@ async def reset_password(
     service = AuthService(session=db, tenant_id=tenant_id)
     await service.reset_password(body.token, body.new_password)
     return None
+
+
+class MeResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: uuid.UUID
+    email: str
+    display_name: str | None = None
+    tenant_id: uuid.UUID
+    permissions: list[str] = []
+
+
+@router.get("/me", response_model=MeResponse)
+async def me(
+    current_user: User = Depends(get_current_user),
+):
+    """Return current authenticated user profile."""
+    return MeResponse(
+        id=current_user.id,
+        email=current_user.email,
+        display_name=current_user.display_name,
+        tenant_id=current_user.tenant_id,
+        permissions=list(getattr(current_user, "permissions", [])),
+    )

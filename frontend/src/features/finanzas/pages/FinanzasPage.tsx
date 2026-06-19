@@ -1,9 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/shared/services/api';
 
 export default function FinanzasPage() {
-  const queryClient = useQueryClient();
-
   const { data: liquidaciones } = useQuery({
     queryKey: ['liquidaciones'],
     queryFn: () => api.get('/liquidaciones/historial').then(r => r.data),

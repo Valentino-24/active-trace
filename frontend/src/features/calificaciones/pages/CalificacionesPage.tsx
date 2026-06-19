@@ -5,7 +5,7 @@ export default function CalificacionesPage() {
   return (
     <div className="space-y-6">
       <ImportarPage />
-      <TablaNotas materiaId="demo" />
+      <TablaNotas />
     </div>
   );
 }

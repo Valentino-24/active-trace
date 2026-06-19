@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider, useAuth } from '../AuthContext';
-import api from '@/shared/services/api';
 
 vi.mock('@/shared/services/api', async () => {
   const actual = await vi.importActual<typeof import('@/shared/services/api')>('@/shared/services/api');

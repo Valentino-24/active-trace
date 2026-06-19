@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { calificacionesService, type Calificacion } from '../types/calificaciones';
 
-export function useCalificaciones(materiaId: string) {
+export function useCalificaciones(materiaId?: string) {
   return useQuery<Calificacion[]>({
     queryKey: ['calificaciones', materiaId],
-    queryFn: () => calificacionesService.listar(materiaId).then(r => r.data),
-    enabled: !!materiaId,
+    queryFn: () => calificacionesService.listar(materiaId || '').then(r => r.data),
   });
 }
 

@@ -4,7 +4,7 @@ import api from '@/shared/services/api';
 export default function EncuentrosPage() {
   const { data } = useQuery({
     queryKey: ['encuentros'],
-    queryFn: () => api.get('/encuentros').then(r => r.data),
+    queryFn: () => api.get('/encuentros/instancias').then(r => r.data),
   });
 
   return (
