@@ -16,7 +16,11 @@ from app.api.v1.routers.admin.carreras import router as admin_carreras_router
 from app.api.v1.routers.admin.cohortes import router as admin_cohortes_router
 from app.api.v1.routers.admin.dictados import router as admin_dictados_router
 from app.api.v1.routers.admin.materias import router as admin_materias_router
+from app.api.v1.routers.admin.usuarios import router as admin_usuarios_router
+from app.api.v1.routers.asignaciones import router as asignaciones_router
 from app.api.v1.routers.auth import router as auth_router
+from app.api.v1.routers.equipos import router as equipos_router
+from app.api.v1.routers.padron import router as padron_router
 from app.api.v1.routers.health import router as health_router
 from app.core.config import Settings
 from app.core.database import create_engine, create_session_factory
@@ -86,6 +90,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(admin_cohortes_router, prefix="/api/admin/cohortes")
     app.include_router(admin_materias_router, prefix="/api/admin/materias")
     app.include_router(admin_dictados_router, prefix="/api/admin/dictados")
+    app.include_router(admin_usuarios_router, prefix="/api/admin/usuarios")
+    app.include_router(asignaciones_router, prefix="/api/asignaciones")
+    app.include_router(equipos_router, prefix="/api/equipos")
+    app.include_router(padron_router, prefix="/api/padron")
 
     return app
 

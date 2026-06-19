@@ -123,6 +123,7 @@ class AuthService:
                 detail="Demasiados intentos. Intente nuevamente en 60 segundos.",
             )
 
+        # Use email_hash for lookup (email column is AES-256-GCM encrypted)
         user = await self._user_repo.get_by_email(email)
 
         if user is None or not verify_password(password, user.password_hash):

@@ -7,6 +7,7 @@ No domain migrations in C-01 — migration 001 will be created by C-02.
 from __future__ import annotations
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -20,6 +21,11 @@ config = context.config
 # Set up logging from alembic.ini
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Allow override via DATABASE_URL env var (for Docker / CI)
+db_url = os.environ.get("DATABASE_URL")
+if db_url:
+    config.set_main_option("sqlalchemy.url", db_url)
 
 # MetaData for autogenerate support
 target_metadata = Base.metadata

@@ -25,9 +25,9 @@ C-01 foundation-setup (infra, Docker, FastAPI skel, DB inicial, OTel) ✅
         └── C-04 rbac-permisos-finos (roles, permisos modulo:accion, matriz, guard)
             ├── C-05 audit-log (E-AUD append-only, middleware, impersonación) ✅
             ├── C-06 estructura-academica (Carrera, Cohorte, Materia, ABM)
-            │   ├── C-07 usuarios-y-asignaciones (Usuario PII cifrada, Asignacion, vigencia)
-            │   │   ├── C-08 equipos-docentes (mis-equipos, masiva, clonar, exportar)
-            │   │   ├── C-09 padron-ingesta-moodle (VersionPadron, import xlsx/csv, Moodle WS)
+            │   ├── C-07 usuarios-y-asignaciones (Usuario PII cifrada, Asignacion, vigencia) ✅
+            │   │   ├── C-08 equipos-docentes (mis-equipos, masiva, clonar, exportar) ✅
+            │   │   ├── C-09 padron-ingesta-moodle (VersionPadron, import xlsx/csv, Moodle WS) ✅
             │   │   │   └── C-10 calificaciones-y-umbral (Calificacion, UmbralMateria, import)
             │   │   │       └── C-11 analisis-atrasados-reportes (atrasados, ranking, notas finales)
             │   │   │           └── C-12 comunicaciones-cola-worker (Comunicacion, worker, preview, aprobación)
@@ -66,13 +66,13 @@ GATE 4: C-04 ✓                                     ← PRIMER FORK (seguridad 
   → C-21 frontend-shell-y-auth                     [Agente C]
 
 GATE 5: C-06 ✓                                     ← FORK ANCHO (entidades raíz listas)
-  → C-07 usuarios-y-asignaciones                   [Agente A]
+  → C-07 usuarios-y-asignaciones ✅                 [Agente A]
   → C-15 avisos-y-acknowledgment                   [Agente B — si C-05 ✓]
   → C-17 programas-y-fechas-academicas             [Agente B]
 
 GATE 6: C-07 ✓                                     ← FORK ANCHO (usuarios + asignaciones listos)
-  → C-08 equipos-docentes                          [Agente A]
-  → C-09 padron-ingesta-moodle                     [Agente B]
+  → C-08 equipos-docentes ✅                       [Agente A]
+  → C-09 padron-ingesta-moodle ✅                   [Agente B]
   → C-13 encuentros-y-guardias                     [Agente A]
   → C-14 evaluaciones-y-coloquios                  [Agente B]
   → C-16 tareas-internas                           [Agente C]
@@ -114,8 +114,8 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 | 3 | C-03 auth-jwt-2fa ✅ | — | — |
 | 4 | C-04 rbac-permisos-finos ✅ | — | — |
 | 5 | C-06 estructura-academica ✅ | C-05 audit-log ✅ | C-21 frontend-shell-y-auth |
-| 6 | C-07 usuarios-y-asignaciones | C-17 programas-y-fechas | C-15 avisos-y-acknowledgment |
-| 7 | C-08 equipos-docentes | C-09 padron-ingesta-moodle | C-20 perfil-y-mensajeria |
+| 6 | C-07 usuarios-y-asignaciones ✅ | C-17 programas-y-fechas | C-15 avisos-y-acknowledgment |
+| 7 | C-08 equipos-docentes ✅ | C-09 padron-ingesta-moodle ✅ | C-20 perfil-y-mensajeria |
 | 8 | C-13 encuentros-y-guardias | C-10 calificaciones-y-umbral | C-16 tareas-internas |
 | 9 | C-14 evaluaciones-y-coloquios | C-11 analisis-atrasados-reportes | C-18 liquidaciones-y-honorarios |
 | 10 | C-19 panel-auditoria-metricas | C-12 comunicaciones-cola-worker | C-22 frontend-academico-docente |
@@ -274,15 +274,16 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 > Todos dependen de `C-07` (usuarios + asignaciones). Se pueden repartir entre los 3 agentes en paralelo.
 
 ### [C-08] `equipos-docentes`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (31/31 tasks, 31 tests E2E)
 - **Scope**:
-  - Vistas/endpoints sobre `Asignacion`: mis-equipos del docente (F4.2), gestión de asignaciones (F4.3).
-  - Asignación masiva (F4.4): bloque docentes × materia × carrera × cohorte × rol con vigencia.
-  - Clonar equipo entre períodos (F4.5, RN-12): duplica asignaciones vigentes con fechas del nuevo período.
-  - Modificar vigencia general del equipo (F4.6); exportar equipo a archivo (F4.7).
-  - `/api/equipos/*` con guard `equipos:asignar` (COORDINADOR, ADMIN). Genera audit (`ASIGNACION_MODIFICAR`).
-  - Tests: clonado entre cohortes, asignación masiva, modificación de vigencia en bloque, export.
-- **Dependencias**: `C-07`
+  - Vistas/endpoints sobre `Asignacion`: mis-equipos del docente (F4.2), gestión de asignaciones con filtros y búsqueda textual (F4.3).
+  - Asignación masiva (F4.4): bloque hasta 200 asignaciones en una transacción con validación de usuarios.
+  - Clonar equipo entre períodos (F4.5, RN-12): duplica asignaciones vigentes con fechas del nuevo período, evita duplicados.
+  - Modificar vigencia general del equipo (F4.6) con protección de fechas pasadas y confirmación explícita.
+  - Exportar equipo a CSV con BOM (F4.7), max 10K filas.
+  - `/api/equipos/*` con guard `equipos:gestionar` (COORDINADOR, ADMIN). Audit `ASIGNACION_MODIFICAR` por batch.
+  - Tests: 31 tests E2E (mi-equipo, gestión, bulk create, clonado RN-12, vigencia, export, permisos, multi-tenancy).
+- **Dependencias**: `C-07` ✅
 - **Governance**: ALTO
 - **Leer antes**:
   - `knowledge-base/06_funcionalidades.md` Épica 4 (F4.2–F4.7)
@@ -290,15 +291,16 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/04_modelo_de_datos.md` §E5 Asignación
 
 ### [C-09] `padron-ingesta-moodle`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (30/30 tasks, 28 tests E2E)
 - **Scope**:
-  - Modelos `VersionPadron` + `EntradaPadron` (versionado: una versión activa por materia×cohorte; activar nueva desactiva la anterior).
-  - Import de padrón: archivo `.xlsx`/`.csv` (fallback manual) con vista previa (F1.3, F1.4).
-  - Integración **Moodle Web Services** (`integrations/moodle_ws.py`): sync de usuarios/actividades, sync nocturna + on-demand; errores mapean a `502` con reintento.
-  - Vaciar datos de materia (F1.5, RN-04). Audit `PADRON_CARGAR`.
-  - `Migración 0NN: version_padron, entrada_padron`.
-  - Tests: versionado (activar desactiva anterior), import xlsx/csv, entrada sin usuario_id (alumno sin cuenta), aislamiento tenant, mock Moodle WS + fallback 502.
-- **Dependencias**: `C-07`
+  - Modelos `VersionPadron` + `EntradaPadron` versionados (activar nueva desactiva anterior, no borra).
+  - Import desde Moodle Web Services (`integrations/moodle_ws.py`) con 3 reintentos backoff, errores → 502.
+  - Import manual: `POST /preview` (parsea xlsx/csv con detección de encoding) + `POST /import` (cifrado AES-256-GCM de emails, matching por email_hash).
+  - Vaciar datos de materia (DELETE) con scope PROFESOR=sus versiones, COORD/ADMIN=todas (RN-04).
+  - Listado y detalle de versiones con entradas paginadas. Email no expuesto en respuestas.
+  - Audit `PADRON_CARGAR` por import.
+  - Tests: 28 E2E (moodle-sync mock, preview con errores, import con/sin match, vaciar scope, multi-tenant, permisos).
+- **Dependencias**: `C-07` ✅
 - **Governance**: MEDIO
 - **Leer antes**:
   - `knowledge-base/04_modelo_de_datos.md` §E6 Padrón (versionado)

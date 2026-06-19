@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy dependency declaration and install into a virtual environment
 COPY pyproject.toml ./
 RUN python -m venv /venv && \
-    /venv/bin/pip install --no-cache-dir .
+    /venv/bin/pip install --no-cache-dir ".[dev]"
 
 # ── Runtime stage ─────────────────────────────────────────────────────────
 FROM python:3.13-slim AS runtime
@@ -26,8 +26,12 @@ WORKDIR /app
 COPY --from=builder /venv /venv
 ENV PATH="/venv/bin:$PATH"
 
-# Copy application code
+# Copy application code (including tests, alembic, and config for development)
 COPY app/ ./app/
+COPY tests/ ./tests/
+COPY alembic/ ./alembic/
+COPY alembic.ini ./
+COPY pyproject.toml ./
 
 # Expose the application port
 EXPOSE 8000
