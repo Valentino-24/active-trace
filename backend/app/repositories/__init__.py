@@ -26,6 +26,12 @@ from app.repositories.coloquio_repository import (
     ResultadoEvaluacionRepository,
 )
 from app.repositories.aviso_repository import AvisoRepository, AcknowledgmentRepository
+from app.repositories.tarea_repository import TareaRepository, ComentarioTareaRepository
+from app.repositories.programa_repository import ProgramaRepository
+from app.repositories.fecha_repository import FechaRepository
+from app.repositories.salario_repository import SalarioBaseRepository, SalarioPlusRepository
+from app.repositories.liquidacion_repository import LiquidacionRepository, FacturaRepository
+from app.repositories.mensaje_repository import MensajeRepository
 
 __all__ = [
     "AnalisisRepository",
@@ -47,4 +53,13 @@ __all__ = [
     "ResultadoEvaluacionRepository",
     "AvisoRepository",
     "AcknowledgmentRepository",
+    "TareaRepository",
+    "ComentarioTareaRepository",
+    "ProgramaRepository",
+    "FechaRepository",
+    "SalarioBaseRepository",
+    "SalarioPlusRepository",
+    "LiquidacionRepository",
+    "FacturaRepository",
+    "MensajeRepository",
 ]

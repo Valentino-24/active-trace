@@ -34,3 +34,6 @@ class Materia(Base, TenantScopedMixin, SoftDeleteMixin):
     estado: Mapped[str] = mapped_column(
         String(20), nullable=False, default="activa"
     )
+    grupo_plus: Mapped[str | None] = mapped_column(
+        String(50), nullable=True, default=None,
+    )

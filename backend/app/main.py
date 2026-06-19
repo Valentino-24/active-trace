@@ -14,6 +14,11 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api.v1.routers.avisos import router as avisos_router
+from app.api.v1.routers.tareas import router as tareas_router
+from app.api.v1.routers.programas_fechas import router as programas_fechas_router
+from app.api.v1.routers.liquidaciones import router as liquidaciones_router
+from app.api.v1.routers.auditoria import router as auditoria_router
+from app.api.v1.routers.perfil_inbox import router as perfil_inbox_router
 from app.api.v1.routers.admin.carreras import router as admin_carreras_router
 from app.api.v1.routers.admin.cohortes import router as admin_cohortes_router
 from app.api.v1.routers.admin.dictados import router as admin_dictados_router
@@ -129,6 +134,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(guardias_router)
     app.include_router(coloquios_router)
     app.include_router(avisos_router)
+    app.include_router(tareas_router)
+    app.include_router(programas_fechas_router)
+    app.include_router(liquidaciones_router)
+    app.include_router(auditoria_router)
+    app.include_router(perfil_inbox_router)
 
     return app
 

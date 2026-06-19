@@ -22,3 +22,16 @@ El sistema SHALL permitir a los usuarios con permiso `estructura:gestionar` admi
 #### Scenario: Crear dictado con materia inactiva
 - **WHEN** un usuario intenta crear un dictado para una materia con `estado: "inactiva"`
 - **THEN** el sistema SHALL devolver 400 con el mensaje "La materia está inactiva"
+
+## ADDED Requirements (C-18 Liquidaciones)
+
+### Requirement: Grupo Plus en Materia
+El sistema SHALL permitir asignar un `grupo_plus` opcional a cada materia para el cálculo de liquidaciones. Este campo es configurable por tenant, nullable, y se utiliza para agrupar materias en el cálculo de plus salariales.
+
+#### Scenario: Materia con grupo_plus
+- **WHEN** un ADMIN crea o modifica una materia con `grupo_plus: "PROG"`
+- **THEN** la materia queda asociada al grupo PROG para liquidaciones
+
+#### Scenario: Materia sin grupo_plus
+- **WHEN** una materia tiene `grupo_plus: null`
+- **THEN** no genera plus salarial en el cálculo de liquidaciones

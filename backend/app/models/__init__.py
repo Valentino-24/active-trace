@@ -27,6 +27,15 @@ from app.models.aviso import Aviso, AlcanceAviso, SeveridadAviso
 from app.models.acknowledgment_aviso import AcknowledgmentAviso
 from app.models.reserva_evaluacion import EstadoReserva, ReservaEvaluacion
 from app.models.resultado_evaluacion import ResultadoEvaluacion
+from app.models.tarea import Tarea, EstadoTarea
+from app.models.comentario_tarea import ComentarioTarea
+from app.models.programa_materia import ProgramaMateria
+from app.models.fecha_academica import FechaAcademica, TipoFecha
+from app.models.salario_base import SalarioBase
+from app.models.salario_plus import SalarioPlus
+from app.models.liquidacion import Liquidacion
+from app.models.factura import Factura
+from app.models.mensaje import Mensaje
 
 __all__ = [
     "Tenant",
@@ -63,6 +72,17 @@ __all__ = [
     "AlcanceAviso",
     "SeveridadAviso",
     "AcknowledgmentAviso",
+    "Tarea",
+    "EstadoTarea",
+    "ComentarioTarea",
+    "ProgramaMateria",
+    "FechaAcademica",
+    "TipoFecha",
+    "SalarioBase",
+    "SalarioPlus",
+    "Liquidacion",
+    "Factura",
+    "Mensaje",
     "BaseModelMixin",
     "TenantScopedMixin",
     "SoftDeleteMixin",

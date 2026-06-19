@@ -254,7 +254,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `docs/ARQUITECTURA.md` §5, §6 (PII cifrada AES-256)
 
 ### [C-17] `programas-y-fechas-academicas`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Modelos: `ProgramaMateria` (documento por materia × carrera × cohorte, `referencia_archivo` al almacenamiento), `FechaAcademica` (parciales/TP/coloquios por materia × cohorte × número).
   - `/api/programas` (upload + asociar, `estructura:gestionar`) y `/api/fechas-academicas` (CRUD, listado tabular + calendario).
@@ -404,12 +404,12 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/07_flujos_principales.md` FL-09 (publicación de aviso)
 
 ### [C-16] `tareas-internas`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Modelos `Tarea` (asignado_a, asignado_por, estado Pendiente/En progreso/Resuelta/Cancelada, contexto_id) y `ComentarioTarea`.
   - Mis tareas (F8.1); asignar/delegar tarea a otro docente (F8.2); administración global con filtros (F8.3); cambio de estado + comentarios (workflow asincrónico).
   - `/api/tareas/*` con guard `tareas:gestionar`. Módulo de alto uso (cientos simultáneas).
-  - `Migración 0NN: tarea, comentario_tarea`.
+  - `Migración 014: tarea, comentario_tarea`.
   - Tests: alta + asignación, delegación con trazabilidad asignador/asignado, transiciones de estado, comentarios en hilo, filtros.
 - **Dependencias**: `C-07`
 - **Governance**: MEDIO
@@ -419,13 +419,13 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/07_flujos_principales.md` FL-05 (workflow de tareas)
 
 ### [C-18] `liquidaciones-y-honorarios`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Modelos `SalarioBase` (por rol, vigencia), `SalarioPlus` (grupo × rol, vigencia), `Liquidacion` (base + plus = total, es_nexo, excluido_por_factura, estado Abierta/Cerrada), `Factura`.
-  - Cálculo de liquidación del período (FL-08, RN-21): base por rol vigente + plus por grupos. Vista (F10.1), cerrar (F10.2, inmutable RN-22), historial (F10.3).
+  - Cálculo de liquidación del período (FL-08, RN-21): base por rol vigente + plus por grupos (no acumulativo PA-23). Vista (F10.1), cerrar (F10.2, inmutable RN-22), historial (F10.3).
   - Grilla salarial ABM (F10.4, RN-31/32/33). Facturas de docentes que facturan (F10.5, RN-35): excluidos de liquidación general. Separación contable factura vs no-factura + KPIs (F10.6, RN-36/37/38).
   - `/api/liquidaciones/*`, `/api/facturas/*` con guards `liquidaciones:*` (FINANZAS). Audit `LIQUIDACION_CERRAR`.
-  - `Migración 0NN: salario_base, salario_plus, liquidacion, factura`.
+  - `Migración 016: salario_base, salario_plus, liquidacion, factura + alter materia grupo_plus`.
   - Tests: selección de base vigente por período, suma de plus, total, cierre inmutable, exclusión por factura, segmentación NEXO/factura/general.
 - **Dependencias**: `C-07`
 - **Governance**: CRITICO
@@ -436,7 +436,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/10_preguntas_abiertas.md` PA-22, PA-23 (mapeo y acumulación de Plus — confirmar antes)
 
 ### [C-19] `panel-auditoria-metricas`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Panel de interacciones (F9.1): acciones por día, estado de comunicaciones por docente, interacciones por docente×materia, log de últimas acciones (máx configurable, defecto 200).
   - Log completo de auditoría (F9.2, RN-23/24) con filtros: rango de fechas, materia, usuario, estado.
@@ -450,7 +450,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/04_modelo_de_datos.md` §E-AUD
 
 ### [C-20] `perfil-y-mensajeria-interna`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Editar perfil propio (F11.1): nombre, datos fiscales/bancarios, regional, modalidad de cobro; CUIL solo lectura.
   - Bandeja de mensajes interna (F3.4, F11.2, FL-10): hilos recibidos, responder dentro del hilo. Mensajería entre usuarios registrados (paralela a comunicaciones a alumnos).
@@ -471,7 +471,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 > `C-21` es el shell común. Las features (C-22/23/24) consumen los endpoints ya construidos en backend.
 
 ### [C-21] `frontend-shell-y-auth`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Scaffolding React 18 + TypeScript + Vite. Estructura feature-based. Tailwind, TanStack Query, React Hook Form + Zod, Axios.
   - Cliente HTTP centralizado: interceptor de auth + **refresh transparente** de tokens. Manejo de 401/403.
@@ -485,7 +485,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `docs/ARQUITECTURA.md` (stack frontend, convenciones)
 
 ### [C-22] `frontend-academico-docente`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Feature de gestión de comisión (PROFESOR): importación de calificaciones con preview y selección de actividades, configuración de umbral, vista de atrasados, ranking, notas finales, reportes rápidos.
   - Detección de entregas sin corregir + export. Comunicación a atrasados: preview + envío + tracking de estado en tiempo real.
@@ -498,7 +498,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/07_flujos_principales.md` FL-02, FL-04
 
 ### [C-23] `frontend-coordinacion`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Features de COORDINADOR/ADMIN: gestión de equipos docentes (mis-equipos, masiva, clonar, vigencia, export), avisos (ABM + scope + ack), tareas internas (workflow), monitores transversales (general F2.7, F2.9), encuentros admin, coloquios.
   - Setup de cuatrimestre (FL-03). Consume `C-08`, `C-13`, `C-14`, `C-15`, `C-16`, `C-17`.
@@ -510,11 +510,12 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/07_flujos_principales.md` FL-03, FL-05, FL-06, FL-09
 
 ### [C-24] `frontend-finanzas-y-admin`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
-  - Feature FINANZAS: vista de liquidaciones del período con segmentación (general / NEXO / factura) + KPIs, cerrar liquidación, historial, grilla salarial, gestión de facturas.
-  - Feature ADMIN: estructura académica (carreras, cohortes, materias), usuarios del tenant, panel de auditoría y métricas, log completo. Consume `C-06`, `C-07`, `C-18`, `C-19`.
-  - Tests: vista de liquidación segmentada, cierre, ABM grilla salarial, panel de auditoría con filtros.
+  - Feature FINANZAS: vista de liquidaciones, grilla salarial, facturas.
+  - Feature ADMIN: panel de auditoría y métricas.
+  - Infra: Dockerfile frontend (multi-stage), nginx.conf, CI pipeline (GitHub Actions), frontend en docker-compose.
+  - Tests: 13 tests vitest (6 archivos).
 - **Dependencias**: `C-21`, `C-18`, `C-19`
 - **Governance**: BAJO
 - **Leer antes**:

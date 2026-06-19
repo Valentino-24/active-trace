@@ -83,5 +83,15 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   pg_data:
