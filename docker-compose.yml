@@ -1,0 +1,87 @@
+# activia-trace — Docker Compose (development)
+#
+# Services:
+#   api       — FastAPI application
+#   postgres  — PostgreSQL database
+#   worker    — Async worker (placeholder in C-01)
+
+services:
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://trace:trace@postgres:5432/trace
+      - DATABASE_URL_TEST=postgresql+asyncpg://trace:trace@postgres-test:5432/trace_test
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production!!}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-dev-encryption-key-change-in-prod!!}
+      - OTEL_SERVICE_NAME=activia-trace
+    env_file:
+      - path: ./backend/.env
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: trace
+      POSTGRES_PASSWORD: trace
+      POSTGRES_DB: trace
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Test PostgreSQL (separate instance for test isolation)
+  postgres-test:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: trace
+      POSTGRES_PASSWORD: trace
+      POSTGRES_DB: trace_test
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U trace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python -m app.workers.main
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://trace:trace@postgres:5432/trace
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production!!}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-dev-encryption-key-change-in-prod!!}
+      - OTEL_SERVICE_NAME=activia-trace-worker
+    env_file:
+      - path: ./backend/.env
+        required: false
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pg_data:

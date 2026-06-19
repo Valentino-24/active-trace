@@ -19,11 +19,11 @@
 ## Árbol de dependencias
 
 ```
-C-01 foundation-setup (infra, Docker, FastAPI skel, DB inicial, OTel)
+C-01 foundation-setup (infra, Docker, FastAPI skel, DB inicial, OTel) ✅
 └── C-02 core-models-y-tenancy (Tenant, mixins, repo base con scope tenant, Alembic)
     └── C-03 auth-jwt-2fa (login, refresh rotation, recuperación, sesión)
         └── C-04 rbac-permisos-finos (roles, permisos modulo:accion, matriz, guard)
-            ├── C-05 audit-log (E-AUD append-only, middleware, impersonación)
+            ├── C-05 audit-log (E-AUD append-only, middleware, impersonación) ✅
             ├── C-06 estructura-academica (Carrera, Cohorte, Materia, ABM)
             │   ├── C-07 usuarios-y-asignaciones (Usuario PII cifrada, Asignacion, vigencia)
             │   │   ├── C-08 equipos-docentes (mis-equipos, masiva, clonar, exportar)
@@ -61,8 +61,8 @@ GATE 3: C-03 ✓
   → C-04 rbac-permisos-finos                       [Agente A]
 
 GATE 4: C-04 ✓                                     ← PRIMER FORK (seguridad lista)
-  → C-05 audit-log                                 [Agente B]
-  → C-06 estructura-academica                      [Agente A]
+  → C-05 audit-log ✅                              [Agente B]
+  → C-06 estructura-academica ✅                   [Agente A]
   → C-21 frontend-shell-y-auth                     [Agente C]
 
 GATE 5: C-06 ✓                                     ← FORK ANCHO (entidades raíz listas)
@@ -109,11 +109,11 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 
 | Paso | Agente A (Backend Core) | Agente B (Backend Aux) | Agente C (Frontend / Soporte) |
 |------|--------------------------|-------------------------|--------------------------------|
-| 1 | C-01 foundation-setup | — | — |
-| 2 | C-02 core-models-y-tenancy | — | — |
-| 3 | C-03 auth-jwt-2fa | — | — |
-| 4 | C-04 rbac-permisos-finos | — | — |
-| 5 | C-06 estructura-academica | C-05 audit-log | C-21 frontend-shell-y-auth |
+| 1 | C-01 foundation-setup ✅ | — | — |
+| 2 | C-02 core-models-y-tenancy ✅ | — | — |
+| 3 | C-03 auth-jwt-2fa ✅ | — | — |
+| 4 | C-04 rbac-permisos-finos ✅ | — | — |
+| 5 | C-06 estructura-academica ✅ | C-05 audit-log ✅ | C-21 frontend-shell-y-auth |
 | 6 | C-07 usuarios-y-asignaciones | C-17 programas-y-fechas | C-15 avisos-y-acknowledgment |
 | 7 | C-08 equipos-docentes | C-09 padron-ingesta-moodle | C-20 perfil-y-mensajeria |
 | 8 | C-13 encuentros-y-guardias | C-10 calificaciones-y-umbral | C-16 tareas-internas |
@@ -128,7 +128,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 ## FASE 0 — Cimiento e Infraestructura
 
 ### [C-01] `foundation-setup`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (26/27 tasks — 9.2 manual docker-compose skip)
 - **Scope**:
   - Estructura de directorios Clean Architecture: `routers/`, `services/`, `repositories/`, `models/`, `schemas/`, `core/`, `integrations/`, `workers/`. Límite ≤500 LOC/archivo.
   - Esqueleto FastAPI con `app/main.py`, health-check `GET /health`, configuración Pydantic v2 Settings desde `.env`.
@@ -150,7 +150,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 > Cadena estrictamente secuencial. Es el corazón multi-tenant del sistema: nada se construye sin esto.
 
 ### [C-02] `core-models-y-tenancy`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Modelo `Tenant` raíz. Mixin base con `id` (UUID), `tenant_id`, `created_at`, `updated_at`, `deleted_at` (soft delete).
   - **Repository genérico** con scope de tenant SIEMPRE activo: todo query filtra por `tenant_id` por defecto (ADR-002 row-level). Un query sin scope debe fallar en review.
@@ -166,7 +166,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `docs/ARQUITECTURA.md` §6, §8 (tenant isolation, AES-256, ADR-002)
 
 ### [C-03] `auth-jwt-2fa`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - `POST /api/auth/login` — email + password (Argon2id), JWT access 15min + refresh token con **rotación** (refresh usado se invalida). Claims mínimos: `user_id`, `tenant_id`, `roles`, `exp`.
   - `POST /api/auth/refresh` — rota refresh, emite nuevo par. `POST /api/auth/logout` — revoca sesión.
@@ -184,7 +184,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `docs/ARQUITECTURA.md` §5.1 (ADR-001 auth propio)
 
 ### [C-04] `rbac-permisos-finos`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
   - Catálogo administrable: tablas `Rol`, `Permiso` (`modulo:accion`), matriz `RolPermiso` (datos, NO hardcode).
   - Roles del dominio seed: ALUMNO, TUTOR, PROFESOR, COORDINADOR, NEXO, ADMIN, FINANZAS.
@@ -199,7 +199,7 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
   - `knowledge-base/08_arquitectura_propuesta.md` §3.2 (RBAC permisos finos)
 
 ### [C-05] `audit-log`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado (23/23 tasks)
 - **Scope**:
   - Modelo `AuditLog` (E-AUD) **append-only**: sin update ni delete a nivel app y DB. Campos: actor, impersonado, materia, accion, detalle JSON, filas_afectadas, ip, user_agent, fecha_hora.
   - Helper/decorator de auditoría para registrar acciones significativas con código estandarizado (`CALIFICACIONES_IMPORTAR`, `PADRON_CARGAR`, etc.).
@@ -218,13 +218,13 @@ C-01 → C-02 → C-03 → C-04 → C-06 → C-07 → C-09 → C-10 → C-11 →
 ## FASE 2 — Entidades Raíz del Dominio Académico
 
 ### [C-06] `estructura-academica`
-- **Estado**: `[ ]` pendiente
+- **Estado**: `[x]` completado
 - **Scope**:
-  - Modelos: `Carrera`, `Cohorte`, `Materia` (catálogo único por tenant — ADR-006).
-  - ABM `/api/admin/carreras`, `/api/admin/cohortes`, `/api/admin/materias` con guard `estructura:gestionar` (ADMIN).
-  - Reglas: unicidad `(tenant_id, codigo)` en Carrera/Materia; `(tenant_id, carrera_id, nombre)` en Cohorte; carrera inactiva no admite cohortes abiertas.
-  - `Migración 004: carrera, cohorte, materia`.
-  - Tests: CRUD, unicidad por tenant, aislamiento multi-tenant, estado activa/inactiva.
+  - Modelos: `Carrera`, `Cohorte`, `Materia`, `Dictado` (catálogo único por tenant — ADR-006).
+  - ABM `/api/admin/carreras`, `/api/admin/cohortes`, `/api/admin/materias`, `/api/admin/dictados` con guard `estructura:gestionar`.
+  - Reglas: unicidad `(tenant_id, codigo)` en Carrera/Materia; `(tenant_id, carrera_id, nombre)` en Cohorte; `(tenant_id, materia_id, carrera_id, cohorte_id)` en Dictado; carrera/materia inactiva no admite dictados.
+  - `Migración 005: carrera, cohorte, materia, dictado`.
+  - Tests: 34 tests E2E, 233 total suite, 0 failures.
 - **Dependencias**: `C-04`
 - **Governance**: MEDIO
 - **Leer antes**:
