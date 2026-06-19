@@ -19,7 +19,7 @@ from jose import JWTError
 # Set env vars BEFORE importing security module so Settings() can load
 os.environ["DATABASE_URL"] = "postgresql+asyncpg://u:p@localhost:5432/t"
 os.environ["SECRET_KEY"] = "a-32-char-test-secret-key-for-testing-only!!"
-os.environ["ENCRYPTION_KEY"] = "a-32-char-test-encryption-key-for-testing!!"
+os.environ["ENCRYPTION_KEY"] = "32char-key-for-aes256-gcm-test!!"
 
 from app.core.security import (  # noqa: E402
     create_access_token,

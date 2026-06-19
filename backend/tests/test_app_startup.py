@@ -10,7 +10,7 @@ def test_create_app_returns_app():
         _env_file=None,
         DATABASE_URL="postgresql+asyncpg://trace:trace@localhost:5433/trace_test",
         SECRET_KEY="a-32-char-test-secret-key-for-testing-only!!",
-        ENCRYPTION_KEY="a-32-char-test-encryption-key-for-testing!!",
+        ENCRYPTION_KEY="32char-key-for-aes256-gcm-test!!",
     )
     app = create_app(settings=settings)
     assert app.title == "activia-trace"

@@ -40,6 +40,20 @@ class Settings(BaseSettings):
         default=15, alias="ACCESS_TOKEN_EXPIRE_MINUTES", ge=1
     )
 
+    # --- SMTP (optional, for future real email sending) ---
+    smtp_host: str | None = Field(default=None, alias="SMTP_HOST")
+    smtp_port: int | None = Field(default=None, alias="SMTP_PORT")
+    smtp_user: str | None = Field(default=None, alias="SMTP_USER")
+    smtp_password: str | None = Field(default=None, alias="SMTP_PASSWORD")
+
+    # --- Worker settings ---
+    worker_poll_interval: int = Field(
+        default=10, alias="WORKER_POLL_INTERVAL", ge=1
+    )
+    worker_batch_size: int = Field(
+        default=50, alias="WORKER_BATCH_SIZE", ge=1, le=500
+    )
+
     # --- Observability ---
     otel_service_name: str = Field(
         default="activia-trace", alias="OTEL_SERVICE_NAME"

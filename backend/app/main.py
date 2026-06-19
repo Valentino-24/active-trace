@@ -6,12 +6,14 @@ production (uvicorn) and test (httpx AsyncClient) usage.
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.v1.routers.avisos import router as avisos_router
 from app.api.v1.routers.admin.carreras import router as admin_carreras_router
 from app.api.v1.routers.admin.cohortes import router as admin_cohortes_router
 from app.api.v1.routers.admin.dictados import router as admin_dictados_router
@@ -21,11 +23,18 @@ from app.api.v1.routers.asignaciones import router as asignaciones_router
 from app.api.v1.routers.auth import router as auth_router
 from app.api.v1.routers.equipos import router as equipos_router
 from app.api.v1.routers.padron import router as padron_router
+from app.api.v1.routers.analisis import router as analisis_router
+from app.api.v1.routers.calificaciones import router as calificaciones_router
+from app.api.v1.routers.comunicaciones import router as comunicaciones_router
+from app.api.v1.routers.encuentros import router as encuentros_router
+from app.api.v1.routers.guardias import router as guardias_router
+from app.api.v1.routers.coloquios import router as coloquios_router
 from app.api.v1.routers.health import router as health_router
 from app.core.config import Settings
 from app.core.database import create_engine, create_session_factory
 from app.core.logging import setup_logging
 from app.core.observability import instrument_fastapi, setup_observability
+from app.workers.comunicacion_worker import ComunicacionWorker
 
 logger = logging.getLogger(__name__)
 
@@ -53,8 +62,27 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         )
         instrument_fastapi(app)
 
+    # ── ComunicacionWorker ─────────────────────────────────────────────────
+    worker = ComunicacionWorker(
+        session_factory=session_factory,
+        settings=settings,
+    )
+    worker_task = asyncio.create_task(worker.run())
+    app.state.worker_task = worker_task
+
     logger.info("Application started")
     yield
+
+    # ── Shutdown ──────────────────────────────────────────────────────
+    logger.info("Shutting down ComunicacionWorker...")
+    await worker.stop()
+    worker_task.cancel()
+    try:
+        await worker_task
+    except asyncio.CancelledError:
+        pass
+    logger.info("ComunicacionWorker stopped")
+
     await engine.dispose()
     logger.info("Application shutdown")
 
@@ -94,6 +122,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(asignaciones_router, prefix="/api/asignaciones")
     app.include_router(equipos_router, prefix="/api/equipos")
     app.include_router(padron_router, prefix="/api/padron")
+    app.include_router(analisis_router)
+    app.include_router(calificaciones_router)
+    app.include_router(comunicaciones_router)
+    app.include_router(encuentros_router)
+    app.include_router(guardias_router)
+    app.include_router(coloquios_router)
+    app.include_router(avisos_router)
 
     return app
 

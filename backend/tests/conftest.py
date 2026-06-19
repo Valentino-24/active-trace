@@ -10,10 +10,11 @@ import os
 # Set env vars for Settings BEFORE any module imports it
 os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://u:p@localhost:5432/t")
 os.environ.setdefault("SECRET_KEY", "a-32-char-test-secret-key-for-testing-only!!")
-os.environ.setdefault("ENCRYPTION_KEY", "a-32-char-test-encryption-key-for-testing!!")
+os.environ.setdefault("ENCRYPTION_KEY", "32char-key-for-aes256-gcm-test!!")
 
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
@@ -36,7 +37,7 @@ TEST_SETTINGS = Settings(
     _env_file=None,
     DATABASE_URL=_TEST_DB_URL,
     SECRET_KEY="a-32-char-test-secret-key-for-testing-only!!",
-    ENCRYPTION_KEY="a-32-char-test-encryption-key-for-testing!!",
+    ENCRYPTION_KEY="32char-key-for-aes256-gcm-test!!",
 )
 
 
@@ -53,7 +54,8 @@ async def db_engine():
         yield engine
     finally:
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.drop_all)
+            await conn.execute(text("DROP SCHEMA public CASCADE"))
+            await conn.execute(text("CREATE SCHEMA public"))
         await engine.dispose()
 
 
@@ -100,7 +102,8 @@ async def async_client() -> AsyncGenerator[AsyncClient, Any]:
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         yield client
 
-    # Cleanup
+    # Cleanup — use CASCADE to handle FK dependencies (e.g. test_item from other modules)
     async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SCHEMA public CASCADE"))
+        await conn.execute(text("CREATE SCHEMA public"))
     await engine.dispose()
