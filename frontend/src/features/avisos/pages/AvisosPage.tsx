@@ -1,38 +1,58 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import api from '@/shared/services/api';
+import { Spinner } from '@/shared/components/Spinner';
+import { EmptyState } from '@/shared/components/EmptyState';
+import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/Card';
+import { Bell, AlertCircle, RefreshCw } from 'lucide-react';
 
 export default function AvisosPage() {
-  const queryClient = useQueryClient();
-  const [titulo, setTitulo] = useState('');
-  const [cuerpo, setCuerpo] = useState('');
-
-  const { data } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['avisos'],
     queryFn: () => api.get('/avisos').then(r => r.data),
   });
 
-  const crear = useMutation({
-    mutationFn: (body: any) => api.post('/avisos', body),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['avisos'] }),
-  });
+  if (isLoading) return <Spinner variant="full-page" size="lg" />;
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">Avisos</h1>
-      <div className="bg-white p-4 rounded shadow max-w-lg">
-        <input value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Título"
-          className="w-full border rounded p-2 mb-2" />
-        <textarea value={cuerpo} onChange={e => setCuerpo(e.target.value)} placeholder="Cuerpo"
-          className="w-full border rounded p-2 mb-3 h-24" />
-        <button onClick={() => crear.mutate({ titulo, cuerpo, alcance: 'Global', severidad: 'Info', inicio_en: new Date().toISOString(), fin_en: new Date(Date.now() + 86400000 * 30).toISOString() })}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Publicar
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-semibold">Error al cargar avisos</h2>
+        <p className="text-sm text-gray-500">{(error as Error)?.message || 'No se pudieron cargar'}</p>
+        <button onClick={() => refetch()} className="inline-flex items-center gap-2 px-4 py-2 rounded-md border hover:bg-gray-50 text-sm">
+          <RefreshCw className="h-4 w-4" /> Reintentar
         </button>
       </div>
-      <div className="bg-white rounded shadow p-4">
-        <p>Avisos publicados: {data?.total ?? 0}</p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Avisos</h1>
+        <p className="text-sm text-gray-500">{data?.total ?? 0} publicados</p>
       </div>
+      {!data?.items?.length ? (
+        <EmptyState title="No hay avisos publicados" description="Los avisos institucionales aparecerán acá" />
+      ) : (
+        <div className="space-y-3">
+          {data.items.map((a: any) => (
+            <Card key={a.id}>
+              <CardHeader className="flex flex-row items-start justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Bell className="h-4 w-4 text-amber-500" /> {a.titulo}
+                  </CardTitle>
+                  <p className="text-sm text-gray-500 mt-1">{a.cuerpo}</p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${a.activo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                  {a.activo ? 'Activo' : 'Inactivo'}
+                </span>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
